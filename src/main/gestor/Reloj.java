@@ -17,12 +17,20 @@ public class Reloj {
         this.duracionCiclo = duracionCiclo;
         this.cicloActual = 0;
     }
+    
+    /**
+     * Constructor por defecto
+     */
+    public Reloj() {
+        this(100); // 100ms por defecto
+    }
 
     /**
      * Avanza un ciclo del reloj
      */
-    public void avanzarCiclo() {
-        // TODO: Implementar avance de ciclo
+    public synchronized void avanzarCiclo() {
+        this.cicloActual++;
+        notifyAll(); // Notificar a los hilos que esperan
     }
 
     /**
