@@ -4,20 +4,20 @@ import main.modelo.Proceso;
 import java.util.List;
 
 /**
- * Interfaz abstracta para algoritmos de planificación
+ * Interfaz que define el contrato para los algoritmos de planificación
  */
 public interface AlgoritmoPlanificacion {
 
     /**
-     * Selecciona el siguiente proceso a ejecutar
+     * Selecciona el siguiente proceso a ejecutar de la lista de procesos listos
      * 
-     * @param procesosListos Lista de procesos en estado listo
-     * @return Proceso seleccionado para ejecución
+     * @param procesosListos Lista de procesos en estado LISTO
+     * @return Proceso seleccionado para ejecutar, o null si no hay procesos
      */
     Proceso seleccionarSiguiente(List<Proceso> procesosListos);
 
     /**
-     * Reordena la cola de procesos listos según el algoritmo
+     * Reordena la cola de procesos según el algoritmo de planificación
      * 
      * @param procesosListos Lista de procesos a reordenar
      */

@@ -6,6 +6,7 @@
             <name>ProyectoSO1</name>
             <source-roots>
                 <root id="src.dir" name="Source Packages"/>
+                <root id="test.src.dir" name="Test Packages"/>
             </source-roots>
             <test-roots>
                 <root id="test.src.dir" name="Test Packages"/>
