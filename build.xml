@@ -6,7 +6,8 @@
     <property name="src.dir" value="src/main/java"/>
     <property name="build.dir" value="build"/>
     <property name="dist.dir" value="dist"/>
-    <property name="main.class" value="main.DemoSimulador"/>
+    <!-- Para GUI usar: main.SimuladorGUI | Para Consola usar: main.SimuladorSO -->
+    <property name="main.class" value="main.SimuladorGUI"/>
     
     <!-- Default target -->
     <target name="default" depends="compile"/>
