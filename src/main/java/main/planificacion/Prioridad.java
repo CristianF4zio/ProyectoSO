@@ -5,11 +5,6 @@ import java.util.List;
 import java.util.Collections;
 import java.util.Comparator;
 
-/**
- * Implementación del algoritmo de planificación por prioridades
- * Los procesos se ejecutan en orden de prioridad (menor número = mayor
- * prioridad)
- */
 public class Prioridad implements AlgoritmoPlanificacion {
 
     @Override
@@ -61,33 +56,16 @@ public class Prioridad implements AlgoritmoPlanificacion {
         return "Planificación por Prioridades";
     }
 
-    /**
-     * Obtiene una descripción detallada del algoritmo
-     * 
-     * @return Descripción del algoritmo de prioridades
-     */
     public String getDescripcion() {
         return "Planificación por Prioridades: Los procesos se ejecutan en orden de prioridad. " +
                 "Menor número de prioridad = mayor prioridad. Puede causar inanición de " +
                 "procesos de baja prioridad si llegan constantemente procesos de alta prioridad.";
     }
 
-    /**
-     * Verifica si el algoritmo es apropiativo
-     * 
-     * @return false - Prioridad básico es no apropiativo
-     */
     public boolean isApropiativo() {
         return false;
     }
 
-    /**
-     * Verifica si un proceso tiene mayor prioridad que otro
-     * 
-     * @param proceso1 Primer proceso
-     * @param proceso2 Segundo proceso
-     * @return true si proceso1 tiene mayor prioridad que proceso2
-     */
     public boolean tieneMayorPrioridad(Proceso proceso1, Proceso proceso2) {
         if (proceso1 == null || proceso2 == null) {
             return false;
@@ -97,12 +75,6 @@ public class Prioridad implements AlgoritmoPlanificacion {
         return proceso1.getPrioridad() < proceso2.getPrioridad();
     }
 
-    /**
-     * Obtiene el nivel de prioridad más alto (menor número) en la lista
-     * 
-     * @param procesos Lista de procesos
-     * @return Nivel de prioridad más alto
-     */
     public int obtenerPrioridadMasAlta(List<Proceso> procesos) {
         if (procesos == null || procesos.isEmpty()) {
             return Integer.MAX_VALUE;
@@ -114,13 +86,6 @@ public class Prioridad implements AlgoritmoPlanificacion {
                 .orElse(Integer.MAX_VALUE);
     }
 
-    /**
-     * Cuenta cuántos procesos tienen una prioridad específica
-     * 
-     * @param procesos  Lista de procesos
-     * @param prioridad Prioridad a contar
-     * @return Número de procesos con esa prioridad
-     */
     public long contarProcesosPorPrioridad(List<Proceso> procesos, int prioridad) {
         if (procesos == null) {
             return 0;

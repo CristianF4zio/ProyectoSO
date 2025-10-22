@@ -55,9 +55,9 @@
             </and>
         </condition>
         <condition property="do.archive">
-            <not>
-                <istrue value="${jar.archive.disabled}"/>
-            </not>
+                <not>
+                    <istrue value="${jar.archive.disabled}"/>
+                </not>
         </condition>
         <condition property="do.mkdist">
             <and>
@@ -194,7 +194,7 @@
         </condition>
         <condition property="testng.available">
             <or>
-                <available classname="org.testng.annotations.Test" classpath="${run.test.classpath}"/>
+            <available classname="org.testng.annotations.Test" classpath="${run.test.classpath}"/>
             </or>
         </condition>
         <condition property="junit+testng.available">
@@ -224,11 +224,11 @@
     <target name="compile" depends="init,deps-jar,pre-pre-compile,pre-compile" description="Compile project.">
         <javac debug="${javac.debug}" deprecation="${javac.deprecation}" destdir="${build.classes.dir}" encoding="${source.encoding}" excludes="${excludes}" fork="${javac.fork}" includeantruntime="false" includes="${includes}" source="${javac.source}" srcdir="${src.dir}" target="${javac.target}" tempdir="${java.io.tmpdir}">
             <compilerarg line="${endorsed.classpath.cmd.line.arg}"/>
-            <compilerarg line="${javac.profile.cmd.line.arg}"/>
-            <compilerarg line="${javac.compilerargs}"/>
-            <classpath>
+                    <compilerarg line="${javac.profile.cmd.line.arg}"/>
+                    <compilerarg line="${javac.compilerargs}"/>
+                    <classpath>
                 <path path="${javac.classpath}"/>
-            </classpath>
+                    </classpath>
         </javac>
     </target>
     <target name="post-compile">
@@ -238,12 +238,12 @@
     <target name="compile-single" depends="init,deps-jar,pre-pre-compile,pre-compile">
         <fail unless="javac.includes">Must select some files in the IDE or set javac.includes</fail>
         <javac debug="${javac.debug}" deprecation="${javac.deprecation}" destdir="${build.classes.dir}" encoding="${source.encoding}" excludes="${excludes}" fork="${javac.fork}" includeantruntime="false" includes="${javac.includes}" source="${javac.source}" srcdir="${src.dir}" target="${javac.target}" tempdir="${java.io.tmpdir}">
-            <compilerarg line="${endorsed.classpath.cmd.line.arg}"/>
-            <compilerarg line="${javac.profile.cmd.line.arg}"/>
-            <compilerarg line="${javac.compilerargs}"/>
-            <classpath>
+                    <compilerarg line="${endorsed.classpath.cmd.line.arg}"/>
+                    <compilerarg line="${javac.profile.cmd.line.arg}"/>
+                    <compilerarg line="${javac.compilerargs}"/>
+                    <classpath>
                 <path path="${javac.classpath}"/>
-            </classpath>
+                    </classpath>
         </javac>
     </target>
     <target name="pre-compile-single">
@@ -253,12 +253,12 @@
     <target name="compile-single" depends="init,deps-jar,pre-pre-compile,pre-compile-single">
         <fail unless="javac.includes">Must select some files in the IDE or set javac.includes</fail>
         <javac debug="${javac.debug}" deprecation="${javac.deprecation}" destdir="${build.classes.dir}" encoding="${source.encoding}" excludes="${excludes}" fork="${javac.fork}" includeantruntime="false" includes="${javac.includes}" source="${javac.source}" srcdir="${src.dir}" target="${javac.target}" tempdir="${java.io.tmpdir}">
-            <compilerarg line="${endorsed.classpath.cmd.line.arg}"/>
-            <compilerarg line="${javac.profile.cmd.line.arg}"/>
-            <compilerarg line="${javac.compilerargs}"/>
-            <classpath>
+                    <compilerarg line="${endorsed.classpath.cmd.line.arg}"/>
+                    <compilerarg line="${javac.profile.cmd.line.arg}"/>
+                    <compilerarg line="${javac.compilerargs}"/>
+                    <classpath>
                 <path path="${javac.classpath}"/>
-            </classpath>
+                    </classpath>
         </javac>
     </target>
     <target name="post-compile-single">
@@ -281,21 +281,21 @@
     <target name="javadoc" depends="init">
         <mkdir dir="${dist.javadoc.dir}"/>
         <javadoc additionalparam="${javadoc.additionalparam}" author="${javadoc.author}" charset="UTF-8" destdir="${dist.javadoc.dir}" docencoding="UTF-8" encoding="${javadoc.encoding.used}" failonerror="true" noindex="${javadoc.noindex}" nonavbar="${javadoc.nonavbar}" notree="${javadoc.notree}" private="${javadoc.private}" source="${javac.source}" splitindex="${javadoc.splitindex}" use="${javadoc.use}" useexternalfile="true" version="${javadoc.version}" windowtitle="${application.title}">
-            <classpath>
+                    <classpath>
                 <path path="${javac.classpath}"/>
-            </classpath>
+                    </classpath>
             <fileset dir="${src.dir}" excludes="*.java,${excludes}" includes="${includes}">
                 <filename name="**/*.java"/>
-            </fileset>
+                            </fileset>
             <fileset dir="${build.generated.sources.dir}" erroronmissingdir="false">
                 <include name="**/*.java"/>
                 <exclude name="*.java"/>
-            </fileset>
+                            </fileset>
         </javadoc>
         <copy todir="${dist.javadoc.dir}">
             <fileset dir="${src.dir}" excludes="${excludes}" includes="${includes}">
                 <filename name="**/doc-files/**"/>
-            </fileset>
+                    </fileset>
             <fileset dir="${build.generated.sources.dir}" erroronmissingdir="false">
                 <include name="**/doc-files/**"/>
             </fileset>
@@ -307,52 +307,52 @@
             <compilerarg line="${endorsed.classpath.cmd.line.arg}"/>
             <compilerarg line="${javac.profile.cmd.line.arg}"/>
             <compilerarg line="${javac.compilerargs}"/>
-            <classpath>
+                    <classpath>
                 <path path="${javac.classpath}"/>
                 <path path="${build.classes.dir}"/>
-            </classpath>
+                    </classpath>
         </javac>
     </target>
     <target name="run" depends="init,compile,post-compile" description="Run a main class.">
         <java classname="${main.class}" dir="${work.dir}" failonerror="${java.failonerror}" fork="true">
             <jvmarg line="${endorsed.classpath.cmd.line.arg}"/>
-            <jvmarg line="${run.jvmargs}"/>
-            <jvmarg line="${run.jvmargs.ide}"/>
-            <arg line="${application.args}"/>
-            <classpath>
-                <path path="${run.classpath}"/>
-            </classpath>
-            <syspropertyset>
-                <propertyref prefix="run-sys-prop."/>
-                <mapper from="run-sys-prop.*" to="*" type="glob"/>
-            </syspropertyset>
-        </java>
+                        <jvmarg line="${run.jvmargs}"/>
+                        <jvmarg line="${run.jvmargs.ide}"/>
+                    <arg line="${application.args}"/>
+                    <classpath>
+                        <path path="${run.classpath}"/>
+                    </classpath>
+                    <syspropertyset>
+                        <propertyref prefix="run-sys-prop."/>
+                        <mapper from="run-sys-prop.*" to="*" type="glob"/>
+                    </syspropertyset>
+                </java>
     </target>
     <target name="run-single" depends="init,compile,post-compile" description="Run a single class.">
         <fail unless="run.class">Must select one file in the IDE or set run.class</fail>
         <java classname="${run.class}" dir="${work.dir}" failonerror="${java.failonerror}" fork="true">
             <jvmarg line="${endorsed.classpath.cmd.line.arg}"/>
-            <jvmarg line="${run.jvmargs}"/>
-            <jvmarg line="${run.jvmargs.ide}"/>
-            <classpath>
+                    <jvmarg line="${run.jvmargs}"/>
+                    <jvmarg line="${run.jvmargs.ide}"/>
+                    <classpath>
                 <path path="${run.classpath}"/>
-            </classpath>
-            <syspropertyset>
-                <propertyref prefix="run-sys-prop."/>
-                <mapper from="run-sys-prop.*" to="*" type="glob"/>
-            </syspropertyset>
-        </java>
+                    </classpath>
+                    <syspropertyset>
+                        <propertyref prefix="run-sys-prop."/>
+                        <mapper from="run-sys-prop.*" to="*" type="glob"/>
+                    </syspropertyset>
+                </java>
     </target>
     <target name="run-applet" depends="init,compile,post-compile" description="Run an applet.">
         <fail unless="applet.url">Must select one file in the IDE or set applet.url</fail>
         <java classname="sun.applet.AppletViewer" dir="${work.dir}" failonerror="true" fork="true">
-            <jvmarg line="${run.jvmargs}"/>
-            <jvmarg line="${run.jvmargs.ide}"/>
+                    <jvmarg line="${run.jvmargs}"/>
+                    <jvmarg line="${run.jvmargs.ide}"/>
             <arg value="${applet.url}"/>
-            <classpath>
+                    <classpath>
                 <path path="${run.classpath}"/>
-            </classpath>
-        </java>
+                    </classpath>
+                </java>
     </target>
     <target name="run-webstart" depends="init,compile,post-compile" description="Run a JNLP application.">
         <fail unless="jnlp.url">Must select one file in the IDE or set jnlp.url</fail>

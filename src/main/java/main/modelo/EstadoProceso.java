@@ -1,8 +1,5 @@
 package main.modelo;
 
-/**
- * Enum que representa los posibles estados de un proceso
- */
 public enum EstadoProceso {
     NUEVO, // Proceso recién creado
     LISTO, // Proceso listo para ejecutar

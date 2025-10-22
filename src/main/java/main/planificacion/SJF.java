@@ -5,10 +5,6 @@ import java.util.List;
 import java.util.Collections;
 import java.util.Comparator;
 
-/**
- * Implementación del algoritmo Shortest Job First (SJF)
- * Los procesos se ejecutan en orden de menor a mayor número de instrucciones
- */
 public class SJF implements AlgoritmoPlanificacion {
 
     @Override
@@ -62,32 +58,16 @@ public class SJF implements AlgoritmoPlanificacion {
         return "SJF (Shortest Job First)";
     }
 
-    /**
-     * Obtiene una descripción detallada del algoritmo
-     * 
-     * @return Descripción del algoritmo SJF
-     */
     public String getDescripcion() {
         return "Shortest Job First: Los procesos se ejecutan en orden de menor a mayor " +
                 "número de instrucciones. Minimiza el tiempo de espera promedio pero " +
                 "puede causar inanición de procesos largos.";
     }
 
-    /**
-     * Verifica si el algoritmo es apropiativo
-     * 
-     * @return false - SJF básico es no apropiativo
-     */
     public boolean isApropiativo() {
         return false;
     }
 
-    /**
-     * Calcula el tiempo de espera promedio teórico para SJF
-     * 
-     * @param procesos Lista de procesos
-     * @return Tiempo de espera promedio
-     */
     public double calcularTiempoEsperaPromedio(List<Proceso> procesos) {
         if (procesos == null || procesos.isEmpty()) {
             return 0.0;

@@ -5,10 +5,6 @@ import java.util.List;
 import java.util.Collections;
 import java.util.Comparator;
 
-/**
- * Implementación del algoritmo First Come First Served (FCFS)
- * Los procesos se ejecutan en el orden de llegada (primero en llegar, primero en ser servido)
- */
 public class FCFS implements AlgoritmoPlanificacion {
 
     @Override
@@ -47,21 +43,13 @@ public class FCFS implements AlgoritmoPlanificacion {
     public String getNombre() {
         return "FCFS (First Come First Served)";
     }
-    
-    /**
-     * Obtiene una descripción detallada del algoritmo
-     * @return Descripción del algoritmo FCFS
-     */
+
     public String getDescripcion() {
         return "First Come First Served: Los procesos se ejecutan en el orden de llegada. " +
                "Es un algoritmo no apropiativo que garantiza equidad pero puede tener " +
                "problemas de convoy (procesos largos bloquean a los cortos).";
     }
-    
-    /**
-     * Verifica si el algoritmo es apropiativo
-     * @return false - FCFS es no apropiativo
-     */
+
     public boolean isApropiativo() {
         return false;
     }

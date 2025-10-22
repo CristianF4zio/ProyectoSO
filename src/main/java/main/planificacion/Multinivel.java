@@ -6,10 +6,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-/**
- * Implementación del algoritmo de planificación multinivel
- * Los procesos se organizan en múltiples colas según su prioridad
- */
 public class Multinivel implements AlgoritmoPlanificacion {
 
     private List<List<Proceso>> colasPorPrioridad;
@@ -72,11 +68,6 @@ public class Multinivel implements AlgoritmoPlanificacion {
         }
     }
 
-    /**
-     * Organiza los procesos en colas según su prioridad
-     * 
-     * @param procesos Lista de procesos a organizar
-     */
     private void organizarProcesosEnColas(List<Proceso> procesos) {
         // Limpiar todas las colas
         for (List<Proceso> cola : colasPorPrioridad) {
@@ -92,12 +83,6 @@ public class Multinivel implements AlgoritmoPlanificacion {
         }
     }
 
-    /**
-     * Calcula el nivel de cola basado en la prioridad del proceso
-     * 
-     * @param prioridad Prioridad del proceso
-     * @return Nivel de cola (0 = mayor prioridad)
-     */
     private int calcularNivel(int prioridad) {
         // Mapear prioridad a nivel de cola
         // Prioridad 1-3 = Nivel 0 (mayor prioridad)
@@ -113,12 +98,6 @@ public class Multinivel implements AlgoritmoPlanificacion {
         return Math.min(nivel, numNiveles - 1);
     }
 
-    /**
-     * Obtiene el número de procesos en un nivel específico
-     * 
-     * @param nivel Nivel de prioridad
-     * @return Número de procesos en ese nivel
-     */
     public int getProcesosEnNivel(int nivel) {
         if (nivel < 0 || nivel >= numNiveles) {
             return 0;
@@ -126,12 +105,6 @@ public class Multinivel implements AlgoritmoPlanificacion {
         return colasPorPrioridad.get(nivel).size();
     }
 
-    /**
-     * Obtiene todos los procesos de un nivel específico
-     * 
-     * @param nivel Nivel de prioridad
-     * @return Lista de procesos en ese nivel
-     */
     public List<Proceso> getProcesosDelNivel(int nivel) {
         if (nivel < 0 || nivel >= numNiveles) {
             return new ArrayList<>();
@@ -139,11 +112,6 @@ public class Multinivel implements AlgoritmoPlanificacion {
         return new ArrayList<>(colasPorPrioridad.get(nivel));
     }
 
-    /**
-     * Obtiene el nivel con mayor prioridad que tiene procesos
-     * 
-     * @return Nivel con mayor prioridad, o -1 si no hay procesos
-     */
     public int getNivelConProcesos() {
         for (int nivel = 0; nivel < numNiveles; nivel++) {
             if (!colasPorPrioridad.get(nivel).isEmpty()) {
@@ -158,40 +126,20 @@ public class Multinivel implements AlgoritmoPlanificacion {
         return "Planificación Multinivel (" + numNiveles + " niveles)";
     }
 
-    /**
-     * Obtiene una descripción detallada del algoritmo
-     * 
-     * @return Descripción del algoritmo multinivel
-     */
     public String getDescripcion() {
         return "Planificación Multinivel: Los procesos se organizan en " + numNiveles +
                 " colas según su prioridad. Se ejecutan primero los procesos de mayor " +
                 "prioridad (nivel 0), y dentro de cada nivel se usa FCFS.";
     }
 
-    /**
-     * Verifica si el algoritmo es apropiativo
-     * 
-     * @return false - Multinivel básico es no apropiativo
-     */
     public boolean isApropiativo() {
         return false;
     }
 
-    /**
-     * Obtiene el número de niveles configurados
-     * 
-     * @return Número de niveles
-     */
     public int getNumNiveles() {
         return numNiveles;
     }
 
-    /**
-     * Obtiene estadísticas de distribución por niveles
-     * 
-     * @return Array con el número de procesos por nivel
-     */
     public int[] getEstadisticasNiveles() {
         int[] estadisticas = new int[numNiveles];
         for (int i = 0; i < numNiveles; i++) {

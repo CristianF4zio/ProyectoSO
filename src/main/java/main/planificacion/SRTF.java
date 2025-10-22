@@ -3,18 +3,12 @@ package main.planificacion;
 import main.modelo.Proceso;
 import java.util.List;
 
-/**
- * Algoritmo de planificación Shortest Remaining Time First (SRTF)
- * Es la versión preemptiva de SJF
- * Selecciona el proceso con el menor tiempo restante de ejecución
- */
 public class SRTF implements AlgoritmoPlanificacion {
 
     @Override
     public String getNombre() {
         return "SRTF (Shortest Remaining Time First)";
     }
-
 
     @Override
     public Proceso seleccionarSiguiente(List<Proceso> procesosListos) {
@@ -64,24 +58,11 @@ public class SRTF implements AlgoritmoPlanificacion {
         });
     }
 
-    /**
-     * Calcula el tiempo restante de un proceso
-     * 
-     * @param proceso Proceso a evaluar
-     * @return Tiempo restante en ciclos
-     */
     private int calcularTiempoRestante(Proceso proceso) {
         // Tiempo restante = Total de instrucciones - PC (Program Counter)
         return proceso.getNumInstrucciones() - proceso.getProgramCounter();
     }
 
-    /**
-     * Determina si se debe hacer preempción
-     * 
-     * @param procesoActual Proceso en ejecución
-     * @param procesosListos Cola de procesos listos
-     * @return true si se debe hacer preempción
-     */
     public boolean debeHacerPreempcion(Proceso procesoActual, List<Proceso> procesosListos) {
         if (procesoActual == null || procesosListos == null || procesosListos.isEmpty()) {
             return false;

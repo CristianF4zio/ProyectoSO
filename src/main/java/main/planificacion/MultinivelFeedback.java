@@ -6,12 +6,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-/**
- * Implementación del algoritmo de planificación multinivel con
- * retroalimentación
- * Los procesos se mueven entre colas según su comportamiento y tiempo de
- * ejecución
- */
 public class MultinivelFeedback implements AlgoritmoPlanificacion {
 
     private List<List<Proceso>> colasPorNivel;
@@ -79,11 +73,6 @@ public class MultinivelFeedback implements AlgoritmoPlanificacion {
         }
     }
 
-    /**
-     * Organiza los procesos en colas según su nivel actual
-     * 
-     * @param procesos Lista de procesos a organizar
-     */
     private void organizarProcesosEnColas(List<Proceso> procesos) {
         // Limpiar todas las colas
         for (List<Proceso> cola : colasPorNivel) {
@@ -99,12 +88,6 @@ public class MultinivelFeedback implements AlgoritmoPlanificacion {
         }
     }
 
-    /**
-     * Obtiene el nivel actual de un proceso basado en su comportamiento
-     * 
-     * @param proceso Proceso del cual obtener el nivel
-     * @return Nivel actual del proceso
-     */
     private int obtenerNivelProceso(Proceso proceso) {
         // Si el proceso no tiene nivel asignado, empezar en nivel 0
         if (proceso.getPrioridad() < 0) {
@@ -117,11 +100,6 @@ public class MultinivelFeedback implements AlgoritmoPlanificacion {
         return Math.max(0, nivel);
     }
 
-    /**
-     * Mueve un proceso al siguiente nivel (menor prioridad)
-     * 
-     * @param proceso Proceso a degradar
-     */
     public void degradarProceso(Proceso proceso) {
         int nivelActual = obtenerNivelProceso(proceso);
         int nuevoNivel = Math.min(nivelActual + 1, numNiveles - 1);
@@ -133,11 +111,6 @@ public class MultinivelFeedback implements AlgoritmoPlanificacion {
         proceso.setQuantumRestante(quantumsPorNivel.get(nuevoNivel));
     }
 
-    /**
-     * Mueve un proceso al nivel anterior (mayor prioridad)
-     * 
-     * @param proceso Proceso a promover
-     */
     public void promoverProceso(Proceso proceso) {
         int nivelActual = obtenerNivelProceso(proceso);
         int nuevoNivel = Math.max(nivelActual - 1, 0);
@@ -149,43 +122,21 @@ public class MultinivelFeedback implements AlgoritmoPlanificacion {
         proceso.setQuantumRestante(quantumsPorNivel.get(nuevoNivel));
     }
 
-    /**
-     * Verifica si un proceso ha terminado su quantum en su nivel actual
-     * 
-     * @param proceso Proceso a verificar
-     * @return true si ha terminado su quantum
-     */
     public boolean haTerminadoQuantum(Proceso proceso) {
         return proceso.getQuantumRestante() <= 0;
     }
 
-    /**
-     * Asigna el quantum correspondiente al nivel del proceso
-     * 
-     * @param proceso Proceso al cual asignar quantum
-     */
     public void asignarQuantum(Proceso proceso) {
         int nivel = obtenerNivelProceso(proceso);
         proceso.setQuantumRestante(quantumsPorNivel.get(nivel));
     }
 
-    /**
-     * Reduce el quantum restante de un proceso
-     * 
-     * @param proceso Proceso del cual reducir quantum
-     */
     public void reducirQuantum(Proceso proceso) {
         if (proceso.getQuantumRestante() > 0) {
             proceso.setQuantumRestante(proceso.getQuantumRestante() - 1);
         }
     }
 
-    /**
-     * Obtiene el quantum para un nivel específico
-     * 
-     * @param nivel Nivel de prioridad
-     * @return Quantum para ese nivel
-     */
     public int getQuantumNivel(int nivel) {
         if (nivel < 0 || nivel >= numNiveles) {
             return 1;
@@ -193,12 +144,6 @@ public class MultinivelFeedback implements AlgoritmoPlanificacion {
         return quantumsPorNivel.get(nivel);
     }
 
-    /**
-     * Obtiene el número de procesos en un nivel específico
-     * 
-     * @param nivel Nivel de prioridad
-     * @return Número de procesos en ese nivel
-     */
     public int getProcesosEnNivel(int nivel) {
         if (nivel < 0 || nivel >= numNiveles) {
             return 0;
@@ -206,12 +151,6 @@ public class MultinivelFeedback implements AlgoritmoPlanificacion {
         return colasPorNivel.get(nivel).size();
     }
 
-    /**
-     * Obtiene todos los procesos de un nivel específico
-     * 
-     * @param nivel Nivel de prioridad
-     * @return Lista de procesos en ese nivel
-     */
     public List<Proceso> getProcesosDelNivel(int nivel) {
         if (nivel < 0 || nivel >= numNiveles) {
             return new ArrayList<>();
@@ -224,40 +163,20 @@ public class MultinivelFeedback implements AlgoritmoPlanificacion {
         return "Planificación Multinivel con Retroalimentación (" + numNiveles + " niveles)";
     }
 
-    /**
-     * Obtiene una descripción detallada del algoritmo
-     * 
-     * @return Descripción del algoritmo multinivel con feedback
-     */
     public String getDescripcion() {
         return "Planificación Multinivel con Retroalimentación: Los procesos se organizan en " +
                 numNiveles + " colas con quantums crecientes. Los procesos que terminan su " +
                 "quantum bajan de nivel, y los que completan I/O pueden subir de nivel.";
     }
 
-    /**
-     * Verifica si el algoritmo es apropiativo
-     * 
-     * @return true - Multinivel con feedback es apropiativo
-     */
     public boolean isApropiativo() {
         return true;
     }
 
-    /**
-     * Obtiene el número de niveles configurados
-     * 
-     * @return Número de niveles
-     */
     public int getNumNiveles() {
         return numNiveles;
     }
 
-    /**
-     * Obtiene estadísticas de distribución por niveles
-     * 
-     * @return Array con el número de procesos por nivel
-     */
     public int[] getEstadisticasNiveles() {
         int[] estadisticas = new int[numNiveles];
         for (int i = 0; i < numNiveles; i++) {
@@ -266,11 +185,6 @@ public class MultinivelFeedback implements AlgoritmoPlanificacion {
         return estadisticas;
     }
 
-    /**
-     * Obtiene los quantums configurados para cada nivel
-     * 
-     * @return Array con los quantums por nivel
-     */
     public int[] getQuantumsNiveles() {
         int[] quantums = new int[numNiveles];
         for (int i = 0; i < numNiveles; i++) {
