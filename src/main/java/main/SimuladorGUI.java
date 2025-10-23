@@ -3,9 +3,9 @@ package main;
 import main.gestor.GestorProcesos;
 import main.modelo.*;
 import main.planificacion.*;
-import main.graficas.GraficadorMetricas;
 import main.estructuras.ListaSimple;
 import main.estructuras.MapaSimple;
+import main.graficas.GraficadorMetricas;
 import javax.swing.*;
 import java.awt.*;
 
@@ -569,14 +569,14 @@ public class SimuladorGUI extends JFrame {
 
     private void actualizarMetricasGraficas() {
         if (graficadorMetricas != null) {
-            String algoritmo = algoritmoActual.getClass().getSimpleName();
+            String algoritmo = algoritmoActual.getNombre();
 
             // Calcular métricas básicas
             double throughput = calcularThroughput();
             double cpuUtil = calcularUtilizacionCPU();
             double tiempoEspera = calcularTiempoEsperaPromedioGraficas();
 
-            // Crear mapa de métricas
+            // Crear mapa de métricas (usando estructura propia)
             MapaSimple<String, Double> metricas = new MapaSimple<>();
             metricas.put("throughput", throughput);
             metricas.put("cpuUtil", cpuUtil);
@@ -586,6 +586,7 @@ public class SimuladorGUI extends JFrame {
             graficadorMetricas.actualizarMetricasPorAlgoritmo(algoritmo, metricas);
         }
     }
+
 
     private double calcularThroughput() {
         int procesosTerminados = gestorProcesos.getProcesosPorEstado(EstadoProceso.TERMINADO).size();

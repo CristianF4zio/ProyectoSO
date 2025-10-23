@@ -190,6 +190,20 @@ public class MapaSimple<K, V> {
         return valor != null ? valor : valorPorDefecto;
     }
 
+    public ListaSimple<K> obtenerClaves() {
+        ListaSimple<K> claves = new ListaSimple<>();
+
+        for (int i = 0; i < capacidad; i++) {
+            Entrada<K, V> entrada = tabla[i];
+            while (entrada != null) {
+                claves.agregar(entrada.clave);
+                entrada = entrada.siguiente;
+            }
+        }
+
+        return claves;
+    }
+
     private static class Entrada<K, V> {
         K clave;
         V valor;
