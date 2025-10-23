@@ -1,13 +1,13 @@
 package main.planificacion;
 
 import main.modelo.Proceso;
-import java.util.List;
+import main.estructuras.ListaSimple;
 
 public interface AlgoritmoPlanificacion {
 
-    Proceso seleccionarSiguiente(List<Proceso> procesosListos);
+    Proceso seleccionarSiguiente(ListaSimple<Proceso> procesosListos);
 
-    void reordenarCola(List<Proceso> procesosListos);
+    void reordenarCola(ListaSimple<Proceso> procesosListos);
 
     String getNombre();
 }

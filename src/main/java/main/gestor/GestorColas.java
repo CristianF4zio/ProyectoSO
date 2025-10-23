@@ -2,33 +2,34 @@ package main.gestor;
 
 import main.modelo.Proceso;
 import main.modelo.EstadoProceso;
-import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
+import main.estructuras.ListaSimple;
+import main.estructuras.ColaSimple;
+import main.estructuras.Ordenador;
 
 public class GestorColas {
 
     private GestorMemoria gestorMemoria;
 
     // Colas de procesos
-    private List<Proceso> colaListos;
-    private List<Proceso> colaBloqueados;
-    private List<Proceso> colaSuspendidos;
-    private List<Proceso> colaTerminados;
+    private ListaSimple<Proceso> colaListos;
+    private ListaSimple<Proceso> colaBloqueados;
+    private ListaSimple<Proceso> colaSuspendidos;
+    private ListaSimple<Proceso> colaTerminados;
 
     // Colas suspendidas específicas
-    private List<Proceso> colaListosSuspendidos;
-    private List<Proceso> colaBloqueadosSuspendidos;
+    private ListaSimple<Proceso> colaListosSuspendidos;
+    private ListaSimple<Proceso> colaBloqueadosSuspendidos;
 
     public GestorColas(GestorMemoria gestorMemoria) {
         this.gestorMemoria = gestorMemoria;
 
-        this.colaListos = new CopyOnWriteArrayList<>();
-        this.colaBloqueados = new CopyOnWriteArrayList<>();
-        this.colaSuspendidos = new CopyOnWriteArrayList<>();
-        this.colaTerminados = new CopyOnWriteArrayList<>();
+        this.colaListos = new ListaSimple<>();
+        this.colaBloqueados = new ListaSimple<>();
+        this.colaSuspendidos = new ListaSimple<>();
+        this.colaTerminados = new ListaSimple<>();
 
-        this.colaListosSuspendidos = new CopyOnWriteArrayList<>();
-        this.colaBloqueadosSuspendidos = new CopyOnWriteArrayList<>();
+        this.colaListosSuspendidos = new ListaSimple<>();
+        this.colaBloqueadosSuspendidos = new ListaSimple<>();
     }
 
     public boolean agregarAListos(Proceso proceso) {
@@ -37,14 +38,14 @@ public class GestorColas {
             if (gestorMemoria.asignarMemoria(proceso)) {
                 if (gestorMemoria.estaEnMemoriaPrincipal(proceso)) {
                     proceso.setEstado(EstadoProceso.LISTO);
-                    colaListos.add(proceso);
+                    colaListos.agregar(proceso);
                     System.out.println("Proceso agregado a cola de listos: " + proceso.getNombre());
                     return true;
                 } else {
                     // Proceso suspendido por falta de memoria
                     proceso.setEstado(EstadoProceso.SUSPENDIDO);
-                    colaSuspendidos.add(proceso);
-                    colaListosSuspendidos.add(proceso);
+                    colaSuspendidos.agregar(proceso);
+                    colaListosSuspendidos.agregar(proceso);
                     System.out.println("Proceso suspendido por falta de memoria: " + proceso.getNombre());
                     return false;
                 }
@@ -53,9 +54,9 @@ public class GestorColas {
             // Intentar reactivar proceso
             if (gestorMemoria.reactivarProceso(proceso)) {
                 proceso.setEstado(EstadoProceso.LISTO);
-                colaSuspendidos.remove(proceso);
-                colaListosSuspendidos.remove(proceso);
-                colaListos.add(proceso);
+                colaSuspendidos.remover(proceso);
+                colaListosSuspendidos.remover(proceso);
+                colaListos.agregar(proceso);
                 System.out.println("Proceso reactivado y agregado a cola de listos: " + proceso.getNombre());
                 return true;
             }
@@ -67,7 +68,7 @@ public class GestorColas {
     public boolean agregarABloqueados(Proceso proceso) {
         if (proceso.getEstado() == EstadoProceso.EJECUCION) {
             proceso.setEstado(EstadoProceso.BLOQUEADO);
-            colaBloqueados.add(proceso);
+            colaBloqueados.agregar(proceso);
             System.out.println("Proceso agregado a cola de bloqueados: " + proceso.getNombre());
             return true;
         }
@@ -77,7 +78,7 @@ public class GestorColas {
     public boolean agregarATerminados(Proceso proceso) {
         if (proceso.getEstado() == EstadoProceso.EJECUCION) {
             proceso.setEstado(EstadoProceso.TERMINADO);
-            colaTerminados.add(proceso);
+            colaTerminados.agregar(proceso);
 
             // Liberar memoria
             gestorMemoria.liberarMemoria(proceso);
@@ -91,7 +92,7 @@ public class GestorColas {
     public boolean suspenderProceso(Proceso proceso) {
         if (proceso.getEstado() == EstadoProceso.LISTO) {
             if (gestorMemoria.suspenderProceso(proceso)) {
-                colaListos.remove(proceso);
+                colaListos.remover(proceso);
                 colaSuspendidos.add(proceso);
                 colaListosSuspendidos.add(proceso);
                 System.out.println("Proceso suspendido por falta de memoria: " + proceso.getNombre());
@@ -99,9 +100,9 @@ public class GestorColas {
             }
         } else if (proceso.getEstado() == EstadoProceso.BLOQUEADO) {
             if (gestorMemoria.suspenderProceso(proceso)) {
-                colaBloqueados.remove(proceso);
+                colaBloqueados.remover(proceso);
                 colaSuspendidos.add(proceso);
-                colaBloqueadosSuspendidos.add(proceso);
+                colaBloqueadosSuspendidos.agregar(proceso);
                 System.out.println("Proceso bloqueado suspendido por falta de memoria: " + proceso.getNombre());
                 return true;
             }
@@ -112,16 +113,16 @@ public class GestorColas {
     public boolean reactivarProceso(Proceso proceso) {
         if (proceso.getEstado() == EstadoProceso.SUSPENDIDO) {
             if (gestorMemoria.reactivarProceso(proceso)) {
-                colaSuspendidos.remove(proceso);
+                colaSuspendidos.remover(proceso);
 
                 // Determinar a qué cola regresar
                 if (colaListosSuspendidos.contains(proceso)) {
-                    colaListosSuspendidos.remove(proceso);
-                    colaListos.add(proceso);
+                    colaListosSuspendidos.remover(proceso);
+                    colaListos.agregar(proceso);
                     proceso.setEstado(EstadoProceso.LISTO);
                 } else if (colaBloqueadosSuspendidos.contains(proceso)) {
-                    colaBloqueadosSuspendidos.remove(proceso);
-                    colaBloqueados.add(proceso);
+                    colaBloqueadosSuspendidos.remover(proceso);
+                    colaBloqueados.agregar(proceso);
                     proceso.setEstado(EstadoProceso.BLOQUEADO);
                 }
 
@@ -133,7 +134,7 @@ public class GestorColas {
     }
 
     public boolean removerDeListos(Proceso proceso) {
-        if (colaListos.remove(proceso)) {
+        if (colaListos.remover(proceso)) {
             System.out.println("Proceso removido de cola de listos: " + proceso.getNombre());
             return true;
         }
@@ -141,7 +142,7 @@ public class GestorColas {
     }
 
     public boolean removerDeBloqueados(Proceso proceso) {
-        if (colaBloqueados.remove(proceso)) {
+        if (colaBloqueados.remover(proceso)) {
             System.out.println("Proceso removido de cola de bloqueados: " + proceso.getNombre());
             return true;
         }
@@ -150,17 +151,22 @@ public class GestorColas {
 
     public void gestionarMemoria() {
         // Verificar si hay procesos que necesitan ser suspendidos
-        List<Proceso> candidatosSuspension = new ArrayList<>();
+        ListaSimple<Proceso> candidatosSuspension = new ListaSimple<>();
 
         // Priorizar procesos de menor prioridad para suspensión
-        candidatosSuspension.addAll(colaListos);
-        candidatosSuspension.addAll(colaBloqueados);
+        for (int i = 0; i < colaListos.tamaño(); i++) {
+            candidatosSuspension.agregar(colaListos.obtener(i));
+        }
+        for (int i = 0; i < colaBloqueados.tamaño(); i++) {
+            candidatosSuspension.agregar(colaBloqueados.obtener(i));
+        }
 
         // Ordenar por prioridad (mayor número = menor prioridad)
-        candidatosSuspension.sort((p1, p2) -> p2.getPrioridad() - p1.getPrioridad());
+        Ordenador.ordenarPorPrioridad(candidatosSuspension);
 
         // Suspender procesos si es necesario
-        for (Proceso proceso : candidatosSuspension) {
+        for (int i = 0; i < candidatosSuspension.tamaño(); i++) {
+            Proceso proceso = candidatosSuspension.obtener(i);
             if (gestorMemoria.getMemoriaDisponible() < 10) { // Umbral de 10 KB
                 suspenderProceso(proceso);
             }
@@ -168,12 +174,16 @@ public class GestorColas {
     }
 
     public void intentarReactivarProcesos() {
-        List<Proceso> candidatosReactivacion = new ArrayList<>(colaSuspendidos);
+        ListaSimple<Proceso> candidatosReactivacion = new ListaSimple<>();
+        for (int i = 0; i < colaSuspendidos.tamaño(); i++) {
+            candidatosReactivacion.agregar(colaSuspendidos.obtener(i));
+        }
 
         // Ordenar por prioridad (menor número = mayor prioridad)
-        candidatosReactivacion.sort((p1, p2) -> p1.getPrioridad() - p2.getPrioridad());
+        Ordenador.ordenarPorPrioridad(candidatosReactivacion);
 
-        for (Proceso proceso : candidatosReactivacion) {
+        for (int i = 0; i < candidatosReactivacion.tamaño(); i++) {
+            Proceso proceso = candidatosReactivacion.obtener(i);
             if (gestorMemoria.getMemoriaDisponible() > 20) { // Umbral de 20 KB
                 reactivarProceso(proceso);
             }
@@ -181,60 +191,83 @@ public class GestorColas {
     }
 
     // Getters para las colas
-    public List<Proceso> getColaListos() {
-        return new ArrayList<>(colaListos);
+    public ListaSimple<Proceso> getColaListos() {
+        ListaSimple<Proceso> resultado = new ListaSimple<>();
+        for (int i = 0; i < colaListos.tamaño(); i++) {
+            resultado.agregar(colaListos.obtener(i));
+        }
+        return resultado;
     }
 
-    public List<Proceso> getColaBloqueados() {
-        return new ArrayList<>(colaBloqueados);
+    public ListaSimple<Proceso> getColaBloqueados() {
+        ListaSimple<Proceso> resultado = new ListaSimple<>();
+        for (int i = 0; i < colaBloqueados.tamaño(); i++) {
+            resultado.agregar(colaBloqueados.obtener(i));
+        }
+        return resultado;
     }
 
-    public List<Proceso> getColaSuspendidos() {
-        return new ArrayList<>(colaSuspendidos);
+    public ListaSimple<Proceso> getColaSuspendidos() {
+        ListaSimple<Proceso> resultado = new ListaSimple<>();
+        for (int i = 0; i < colaSuspendidos.tamaño(); i++) {
+            resultado.agregar(colaSuspendidos.obtener(i));
+        }
+        return resultado;
     }
 
-    public List<Proceso> getColaTerminados() {
-        return new ArrayList<>(colaTerminados);
+    public ListaSimple<Proceso> getColaTerminados() {
+        ListaSimple<Proceso> resultado = new ListaSimple<>();
+        for (int i = 0; i < colaTerminados.tamaño(); i++) {
+            resultado.agregar(colaTerminados.obtener(i));
+        }
+        return resultado;
     }
 
-    public List<Proceso> getColaListosSuspendidos() {
-        return new ArrayList<>(colaListosSuspendidos);
+    public ListaSimple<Proceso> getColaListosSuspendidos() {
+        ListaSimple<Proceso> resultado = new ListaSimple<>();
+        for (int i = 0; i < colaListosSuspendidos.tamaño(); i++) {
+            resultado.agregar(colaListosSuspendidos.obtener(i));
+        }
+        return resultado;
     }
 
-    public List<Proceso> getColaBloqueadosSuspendidos() {
-        return new ArrayList<>(colaBloqueadosSuspendidos);
+    public ListaSimple<Proceso> getColaBloqueadosSuspendidos() {
+        ListaSimple<Proceso> resultado = new ListaSimple<>();
+        for (int i = 0; i < colaBloqueadosSuspendidos.tamaño(); i++) {
+            resultado.agregar(colaBloqueadosSuspendidos.obtener(i));
+        }
+        return resultado;
     }
 
     public int[] obtenerEstadisticas() {
         return new int[] {
-                colaListos.size(),
-                colaBloqueados.size(),
-                colaSuspendidos.size(),
-                colaTerminados.size(),
-                colaListosSuspendidos.size(),
-                colaBloqueadosSuspendidos.size()
+                colaListos.tamaño(),
+                colaBloqueados.tamaño(),
+                colaSuspendidos.tamaño(),
+                colaTerminados.tamaño(),
+                colaListosSuspendidos.tamaño(),
+                colaBloqueadosSuspendidos.tamaño()
         };
     }
 
     public String obtenerInformacionDetallada() {
         StringBuilder info = new StringBuilder();
         info.append("=== ESTADO DE COLAS ===\n");
-        info.append("Cola Listos: ").append(colaListos.size()).append(" procesos\n");
-        info.append("Cola Bloqueados: ").append(colaBloqueados.size()).append(" procesos\n");
-        info.append("Cola Suspendidos: ").append(colaSuspendidos.size()).append(" procesos\n");
-        info.append("Cola Terminados: ").append(colaTerminados.size()).append(" procesos\n");
-        info.append("Listos Suspendidos: ").append(colaListosSuspendidos.size()).append(" procesos\n");
-        info.append("Bloqueados Suspendidos: ").append(colaBloqueadosSuspendidos.size()).append(" procesos\n");
+        info.append("Cola Listos: ").append(colaListos.tamaño()).append(" procesos\n");
+        info.append("Cola Bloqueados: ").append(colaBloqueados.tamaño()).append(" procesos\n");
+        info.append("Cola Suspendidos: ").append(colaSuspendidos.tamaño()).append(" procesos\n");
+        info.append("Cola Terminados: ").append(colaTerminados.tamaño()).append(" procesos\n");
+        info.append("Listos Suspendidos: ").append(colaListosSuspendidos.tamaño()).append(" procesos\n");
+        info.append("Bloqueados Suspendidos: ").append(colaBloqueadosSuspendidos.tamaño()).append(" procesos\n");
         return info.toString();
     }
 
     public void limpiarProcesosTerminados() {
-        colaTerminados.clear();
+        colaTerminados.limpiar();
         System.out.println("Cola de procesos terminados limpiada");
     }
 
     public boolean hayProcesosActivos() {
-        return !colaListos.isEmpty() || !colaBloqueados.isEmpty() || !colaSuspendidos.isEmpty();
+        return !colaListos.estaVacia() || !colaBloqueados.estaVacia() || !colaSuspendidos.estaVacia();
     }
 }
-

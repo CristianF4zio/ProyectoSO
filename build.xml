@@ -6,6 +6,7 @@
     <property name="src.dir" value="src/main/java"/>
     <property name="build.dir" value="build"/>
     <property name="dist.dir" value="dist"/>
+    <property name="lib.dir" value="lib"/>
     <!-- Para GUI usar: main.SimuladorGUI | Para Consola usar: main.SimuladorSO -->
     <property name="main.class" value="main.SimuladorGUI"/>
     
@@ -18,16 +19,42 @@
         <delete dir="${dist.dir}"/>
     </target>
     
-    <!-- Compile target -->
-    <target name="compile">
+    <!-- Init target -->
+    <target name="init">
         <mkdir dir="${build.dir}"/>
+        <mkdir dir="${lib.dir}"/>
+    </target>
+    
+    <!-- Download libraries target -->
+    <target name="download-libs" depends="init">
+        <get src="https://repo1.maven.org/maven2/org/jfree/jfreechart/1.5.3/jfreechart-1.5.3.jar" 
+             dest="${lib.dir}/jfreechart-1.5.3.jar" 
+             usetimestamp="true"/>
+        <get src="https://repo1.maven.org/maven2/org/jfree/jcommon/1.0.24/jcommon-1.0.24.jar" 
+             dest="${lib.dir}/jcommon-1.0.24.jar" 
+             usetimestamp="true"/>
+    </target>
+    
+    <!-- Compile target -->
+    <target name="compile" depends="download-libs">
         <javac srcdir="${src.dir}" destdir="${build.dir}" 
-               release="21" includeantruntime="false"/>
+               release="21" includeantruntime="false">
+            <classpath>
+                <pathelement location="${lib.dir}/jfreechart-1.5.3.jar"/>
+                <pathelement location="${lib.dir}/jcommon-1.0.24.jar"/>
+            </classpath>
+        </javac>
     </target>
     
     <!-- Run target -->
     <target name="run" depends="compile">
-        <java classname="${main.class}" classpath="${build.dir}"/>
+        <java classname="${main.class}" fork="true">
+            <classpath>
+                <pathelement location="${build.dir}"/>
+                <pathelement location="${lib.dir}/jfreechart-1.5.3.jar"/>
+                <pathelement location="${lib.dir}/jcommon-1.0.24.jar"/>
+            </classpath>
+        </java>
     </target>
     
     <!-- JAR target -->

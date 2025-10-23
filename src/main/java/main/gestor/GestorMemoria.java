@@ -2,8 +2,9 @@ package main.gestor;
 
 import main.modelo.Proceso;
 import main.modelo.EstadoProceso;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import main.estructuras.ListaSimple;
+import main.estructuras.MapaSimple;
+import main.estructuras.Ordenador;
 
 public class GestorMemoria {
 
@@ -13,9 +14,9 @@ public class GestorMemoria {
     private int memoriaDisponible;
 
     // Mapas de memoria
-    private Map<Integer, Proceso> memoriaPrincipal; // ID -> Proceso
-    private Map<Integer, Proceso> memoriaSecundaria; // ID -> Proceso
-    private Map<Integer, Integer> direccionesMemoria; // ID -> Dirección en memoria
+    private MapaSimple<Integer, Proceso> memoriaPrincipal; // ID -> Proceso
+    private MapaSimple<Integer, Proceso> memoriaSecundaria; // ID -> Proceso
+    private MapaSimple<Integer, Integer> direccionesMemoria; // ID -> Dirección en memoria
 
     // Estadísticas
     private int procesosEnMemoriaPrincipal;
@@ -32,9 +33,9 @@ public class GestorMemoria {
         this.tamanioMemoriaSecundaria = tamanioMemoriaSecundaria;
         this.memoriaDisponible = tamanioMemoriaPrincipal;
 
-        this.memoriaPrincipal = new ConcurrentHashMap<>();
-        this.memoriaSecundaria = new ConcurrentHashMap<>();
-        this.direccionesMemoria = new ConcurrentHashMap<>();
+        this.memoriaPrincipal = new MapaSimple<>();
+        this.memoriaSecundaria = new MapaSimple<>();
+        this.direccionesMemoria = new MapaSimple<>();
 
         this.procesosEnMemoriaPrincipal = 0;
         this.procesosEnMemoriaSecundaria = 0;
@@ -63,8 +64,8 @@ public class GestorMemoria {
     }
 
     private boolean asignarMemoriaPrincipal(Proceso proceso, int tamanio) {
-        memoriaPrincipal.put(proceso.getId(), proceso);
-        direccionesMemoria.put(proceso.getId(), memoriaDisponible - tamanio);
+        memoriaPrincipal.poner(proceso.getId(), proceso);
+        direccionesMemoria.poner(proceso.getId(), memoriaDisponible - tamanio);
         memoriaDisponible -= tamanio;
         procesosEnMemoriaPrincipal++;
         totalAsignaciones++;
@@ -75,8 +76,8 @@ public class GestorMemoria {
     }
 
     private boolean asignarMemoriaSecundaria(Proceso proceso, int tamanio) {
-        memoriaSecundaria.put(proceso.getId(), proceso);
-        direccionesMemoria.put(proceso.getId(), -1); // -1 indica memoria secundaria
+        memoriaSecundaria.poner(proceso.getId(), proceso);
+        direccionesMemoria.poner(proceso.getId(), -1); // -1 indica memoria secundaria
         procesosEnMemoriaSecundaria++;
         totalAsignaciones++;
 
@@ -92,9 +93,9 @@ public class GestorMemoria {
     public boolean liberarMemoria(Proceso proceso) {
         int id = proceso.getId();
 
-        if (memoriaPrincipal.containsKey(id)) {
+        if (memoriaPrincipal.contieneClave(id)) {
             return liberarMemoriaPrincipal(proceso);
-        } else if (memoriaSecundaria.containsKey(id)) {
+        } else if (memoriaSecundaria.contieneClave(id)) {
             return liberarMemoriaSecundaria(proceso);
         }
 
@@ -105,8 +106,8 @@ public class GestorMemoria {
         int id = proceso.getId();
         int tamanio = calcularTamanioProceso(proceso);
 
-        memoriaPrincipal.remove(id);
-        direccionesMemoria.remove(id);
+        memoriaPrincipal.remover(id);
+        direccionesMemoria.remover(id);
         memoriaDisponible += tamanio;
         procesosEnMemoriaPrincipal--;
         totalLiberaciones++;
@@ -120,8 +121,8 @@ public class GestorMemoria {
         int id = proceso.getId();
         int tamanio = calcularTamanioProceso(proceso);
 
-        memoriaSecundaria.remove(id);
-        direccionesMemoria.remove(id);
+        memoriaSecundaria.remover(id);
+        direccionesMemoria.remover(id);
         procesosEnMemoriaSecundaria--;
         totalLiberaciones++;
 
@@ -131,9 +132,10 @@ public class GestorMemoria {
     }
 
     private boolean liberarMemoria(int tamanioNecesario) {
-        List<Proceso> candidatos = obtenerCandidatosReemplazo();
+        ListaSimple<Proceso> candidatos = obtenerCandidatosReemplazo();
 
-        for (Proceso proceso : candidatos) {
+        for (int i = 0; i < candidatos.tamaño(); i++) {
+            Proceso proceso = candidatos.obtener(i);
             if (memoriaDisponible >= tamanioNecesario) {
                 break;
             }
@@ -148,13 +150,13 @@ public class GestorMemoria {
     public boolean suspenderProceso(Proceso proceso) {
         int id = proceso.getId();
 
-        if (memoriaPrincipal.containsKey(id)) {
-            Proceso procesoSuspendido = memoriaPrincipal.remove(id);
-            memoriaSecundaria.put(id, procesoSuspendido);
+        if (memoriaPrincipal.contieneClave(id)) {
+            Proceso procesoSuspendido = memoriaPrincipal.remover(id);
+            memoriaSecundaria.poner(id, procesoSuspendido);
 
             int tamanio = calcularTamanioProceso(proceso);
             memoriaDisponible += tamanio;
-            direccionesMemoria.put(id, -1);
+            direccionesMemoria.poner(id, -1);
 
             proceso.setEstado(EstadoProceso.SUSPENDIDO);
             procesosEnMemoriaPrincipal--;
@@ -173,12 +175,12 @@ public class GestorMemoria {
         int id = proceso.getId();
         int tamanio = calcularTamanioProceso(proceso);
 
-        if (memoriaSecundaria.containsKey(id) && memoriaDisponible >= tamanio) {
-            Proceso procesoReactivado = memoriaSecundaria.remove(id);
-            memoriaPrincipal.put(id, procesoReactivado);
+        if (memoriaSecundaria.contieneClave(id) && memoriaDisponible >= tamanio) {
+            Proceso procesoReactivado = memoriaSecundaria.remover(id);
+            memoriaPrincipal.poner(id, procesoReactivado);
 
             memoriaDisponible -= tamanio;
-            direccionesMemoria.put(id, memoriaDisponible + tamanio);
+            direccionesMemoria.poner(id, memoriaDisponible + tamanio);
 
             proceso.setEstado(EstadoProceso.LISTO);
             procesosEnMemoriaSecundaria--;
@@ -192,22 +194,24 @@ public class GestorMemoria {
         return false;
     }
 
-    private List<Proceso> obtenerCandidatosReemplazo() {
-        List<Proceso> candidatos = new ArrayList<>(memoriaPrincipal.values());
+    private ListaSimple<Proceso> obtenerCandidatosReemplazo() {
+        ListaSimple<Proceso> candidatos = new ListaSimple<>();
+        for (int i = 0; i < memoriaPrincipal.tamaño(); i++) {
+            candidatos.agregar(memoriaPrincipal.obtener(i));
+        }
 
         switch (politicaReemplazo) {
             case LRU:
                 // Least Recently Used - ordenar por tiempo de acceso
-                candidatos.sort((p1, p2) -> Long.compare(p1.getTiempoCreacion().toEpochSecond(java.time.ZoneOffset.UTC),
-                        p2.getTiempoCreacion().toEpochSecond(java.time.ZoneOffset.UTC)));
+                Ordenador.ordenarPorTiempoLlegada(candidatos);
                 break;
             case FIFO:
                 // First In First Out - ordenar por tiempo de creación
-                candidatos.sort((p1, p2) -> p1.getId() - p2.getId());
+                Ordenador.ordenarPorTiempoLlegada(candidatos);
                 break;
             case PRIORIDAD:
                 // Por prioridad - ordenar por prioridad (menor prioridad = mayor número)
-                candidatos.sort((p1, p2) -> p2.getPrioridad() - p1.getPrioridad());
+                Ordenador.ordenarPorPrioridad(candidatos);
                 break;
         }
 
@@ -220,15 +224,16 @@ public class GestorMemoria {
     }
 
     public boolean estaEnMemoriaPrincipal(Proceso proceso) {
-        return memoriaPrincipal.containsKey(proceso.getId());
+        return memoriaPrincipal.contieneClave(proceso.getId());
     }
 
     public boolean estaEnMemoriaSecundaria(Proceso proceso) {
-        return memoriaSecundaria.containsKey(proceso.getId());
+        return memoriaSecundaria.contieneClave(proceso.getId());
     }
 
     public int obtenerDireccionMemoria(Proceso proceso) {
-        return direccionesMemoria.getOrDefault(proceso.getId(), -1);
+        Integer direccion = direccionesMemoria.obtener(proceso.getId());
+        return direccion != null ? direccion : -1;
     }
 
     public int[] obtenerEstadisticas() {

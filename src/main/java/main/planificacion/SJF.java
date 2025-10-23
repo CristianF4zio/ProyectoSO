@@ -1,56 +1,41 @@
 package main.planificacion;
 
 import main.modelo.Proceso;
-import java.util.List;
-import java.util.Collections;
-import java.util.Comparator;
+import main.estructuras.ListaSimple;
+import main.estructuras.Ordenador;
 
 public class SJF implements AlgoritmoPlanificacion {
 
     @Override
-    public Proceso seleccionarSiguiente(List<Proceso> procesosListos) {
-        if (procesosListos == null || procesosListos.isEmpty()) {
+    public Proceso seleccionarSiguiente(ListaSimple<Proceso> procesosListos) {
+        if (procesosListos == null || procesosListos.estaVacia()) {
             return null;
         }
 
         // SJF selecciona el proceso con menor número de instrucciones restantes
-        return procesosListos.stream()
-                .min(Comparator.comparing(Proceso::getInstruccionesRestantes)
-                        .thenComparing(Proceso::getTiempoCreacion)
-                        .thenComparing(Proceso::getId))
-                .orElse(null);
+        Proceso menor = procesosListos.obtener(0);
+        for (int i = 1; i < procesosListos.tamaño(); i++) {
+            Proceso proceso = procesosListos.obtener(i);
+            if (proceso.getInstruccionesRestantes() < menor.getInstruccionesRestantes()) {
+                menor = proceso;
+            } else if (proceso.getInstruccionesRestantes() == menor.getInstruccionesRestantes()) {
+                if (proceso.getId() < menor.getId()) {
+                    menor = proceso;
+                }
+            }
+        }
+        return menor;
     }
 
     @Override
-    public void reordenarCola(List<Proceso> procesosListos) {
-        if (procesosListos == null || procesosListos.isEmpty()) {
+    public void reordenarCola(ListaSimple<Proceso> procesosListos) {
+        if (procesosListos == null || procesosListos.estaVacia()) {
             return;
         }
 
         // Ordenar por número de instrucciones restantes (SJF: trabajo más corto
         // primero)
-        Collections.sort(procesosListos, new Comparator<Proceso>() {
-            @Override
-            public int compare(Proceso p1, Proceso p2) {
-                // Primero por instrucciones restantes
-                int comparacionInstrucciones = Integer.compare(
-                        p1.getInstruccionesRestantes(),
-                        p2.getInstruccionesRestantes());
-
-                if (comparacionInstrucciones != 0) {
-                    return comparacionInstrucciones;
-                }
-
-                // Si tienen las mismas instrucciones, por tiempo de creación (FCFS)
-                int comparacionTiempo = p1.getTiempoCreacion().compareTo(p2.getTiempoCreacion());
-                if (comparacionTiempo != 0) {
-                    return comparacionTiempo;
-                }
-
-                // Si todo es igual, por ID
-                return Integer.compare(p1.getId(), p2.getId());
-            }
-        });
+        Ordenador.ordenarPorInstrucciones(procesosListos);
     }
 
     @Override
@@ -68,24 +53,27 @@ public class SJF implements AlgoritmoPlanificacion {
         return false;
     }
 
-    public double calcularTiempoEsperaPromedio(List<Proceso> procesos) {
-        if (procesos == null || procesos.isEmpty()) {
+    public double calcularTiempoEsperaPromedio(ListaSimple<Proceso> procesos) {
+        if (procesos == null || procesos.estaVacia()) {
             return 0.0;
         }
 
         // Ordenar procesos por número de instrucciones (SJF)
-        List<Proceso> procesosOrdenados = procesos.stream()
-                .sorted(Comparator.comparing(Proceso::getNumInstrucciones))
-                .collect(java.util.stream.Collectors.toList());
+        ListaSimple<Proceso> procesosOrdenados = new ListaSimple<>();
+        for (int i = 0; i < procesos.tamaño(); i++) {
+            procesosOrdenados.agregar(procesos.obtener(i));
+        }
+        Ordenador.ordenarPorInstrucciones(procesosOrdenados);
 
         long tiempoEsperaTotal = 0;
         long tiempoCompletado = 0;
 
-        for (Proceso proceso : procesosOrdenados) {
+        for (int i = 0; i < procesosOrdenados.tamaño(); i++) {
+            Proceso proceso = procesosOrdenados.obtener(i);
             tiempoEsperaTotal += tiempoCompletado;
             tiempoCompletado += proceso.getNumInstrucciones();
         }
 
-        return (double) tiempoEsperaTotal / procesos.size();
+        return (double) tiempoEsperaTotal / procesos.tamaño();
     }
 }

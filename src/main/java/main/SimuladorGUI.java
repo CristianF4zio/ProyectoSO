@@ -3,9 +3,11 @@ package main;
 import main.gestor.GestorProcesos;
 import main.modelo.*;
 import main.planificacion.*;
+import main.graficas.GraficadorMetricas;
+import main.estructuras.ListaSimple;
+import main.estructuras.MapaSimple;
 import javax.swing.*;
 import java.awt.*;
-import java.util.List;
 
 public class SimuladorGUI extends JFrame {
 
@@ -29,9 +31,11 @@ public class SimuladorGUI extends JFrame {
     private JButton btnCrearProceso;
     private JButton btnLimpiarLog;
     private JButton btnReiniciar;
+    private JButton btnVerGraficas;
 
     private Timer timer;
     private boolean ejecutando = false;
+    private GraficadorMetricas graficadorMetricas;
 
     public SimuladorGUI() {
         super("Simulador de Sistema Operativo - GUI");
@@ -39,6 +43,7 @@ public class SimuladorGUI extends JFrame {
         // Inicializar componentes
         gestorProcesos = new GestorProcesos(50);
         algoritmoActual = new FCFS();
+        graficadorMetricas = new GraficadorMetricas();
 
         // Configurar ventana
         setSize(1200, 700);
@@ -118,6 +123,9 @@ public class SimuladorGUI extends JFrame {
 
         btnReiniciar = new JButton("Reiniciar");
         btnReiniciar.addActionListener(e -> reiniciarProyecto());
+
+        btnVerGraficas = new JButton("Ver Gráficas");
+        btnVerGraficas.addActionListener(e -> mostrarGraficas());
     }
 
     private void configurarLayout() {
@@ -140,6 +148,7 @@ public class SimuladorGUI extends JFrame {
         panelControl.add(btnCrearProceso);
         panelControl.add(btnLimpiarLog);
         panelControl.add(btnReiniciar);
+        panelControl.add(btnVerGraficas);
 
         // Panel izquierdo - Colas
         JPanel panelColas = new JPanel(new GridLayout(2, 1, 5, 5));
@@ -184,7 +193,9 @@ public class SimuladorGUI extends JFrame {
         gestorProcesos.crearProceso("Proceso5", 20, TipoProceso.CPU_BOUND, 2);
 
         // Cambiar a LISTO
-        for (Proceso p : gestorProcesos.getProcesosActivos()) {
+        ListaSimple<Proceso> procesosActivos = gestorProcesos.getProcesosActivos();
+        for (int i = 0; i < procesosActivos.tamaño(); i++) {
+            Proceso p = procesosActivos.obtener(i);
             p.setEstado(EstadoProceso.LISTO);
         }
 
@@ -213,7 +224,9 @@ public class SimuladorGUI extends JFrame {
         log("→ Proceso5: CPU BOUND (20 instrucciones) - Proceso de cálculo intensivo");
 
         // Cambiar a LISTO
-        for (Proceso p : gestorProcesos.getProcesosActivos()) {
+        ListaSimple<Proceso> procesosActivos2 = gestorProcesos.getProcesosActivos();
+        for (int i = 0; i < procesosActivos2.tamaño(); i++) {
+            Proceso p = procesosActivos2.obtener(i);
             p.setEstado(EstadoProceso.LISTO);
         }
 
@@ -245,7 +258,7 @@ public class SimuladorGUI extends JFrame {
 
         // Si no hay proceso en ejecución, seleccionar siguiente
         if (procesoEnEjecucion == null) {
-            List<Proceso> listos = gestorProcesos.getProcesosPorEstado(EstadoProceso.LISTO);
+            ListaSimple<Proceso> listos = gestorProcesos.getProcesosPorEstado(EstadoProceso.LISTO);
             if (!listos.isEmpty()) {
                 algoritmoActual.reordenarCola(listos);
                 procesoEnEjecucion = algoritmoActual.seleccionarSiguiente(listos);
@@ -291,6 +304,11 @@ public class SimuladorGUI extends JFrame {
         }
 
         actualizarVista();
+
+        // Actualizar gráficas cada 5 ciclos
+        if (cicloActual % 5 == 0) {
+            actualizarMetricasGraficas();
+        }
 
         // Verificar si todos terminaron
         if (gestorProcesos.getProcesosPorEstado(EstadoProceso.LISTO).isEmpty() &&
@@ -370,7 +388,9 @@ public class SimuladorGUI extends JFrame {
     private void actualizarVista() {
         // Actualizar lista de listos
         modeloListos.clear();
-        for (Proceso p : gestorProcesos.getProcesosPorEstado(EstadoProceso.LISTO)) {
+        ListaSimple<Proceso> listos = gestorProcesos.getProcesosPorEstado(EstadoProceso.LISTO);
+        for (int i = 0; i < listos.tamaño(); i++) {
+            Proceso p = listos.obtener(i);
             modeloListos.addElement(String.format("%-12s [%2d inst, Pri:%d, %s]",
                     p.getNombre(), p.getNumInstrucciones(), p.getPrioridad(), p.getTipo()));
         }
@@ -381,7 +401,9 @@ public class SimuladorGUI extends JFrame {
 
         // Actualizar lista de terminados
         modeloTerminados.clear();
-        for (Proceso p : gestorProcesos.getProcesosPorEstado(EstadoProceso.TERMINADO)) {
+        ListaSimple<Proceso> terminados = gestorProcesos.getProcesosPorEstado(EstadoProceso.TERMINADO);
+        for (int i = 0; i < terminados.tamaño(); i++) {
+            Proceso p = terminados.obtener(i);
             modeloTerminados.addElement(String.format("✓ %-12s [%2d inst ejecutadas]",
                     p.getNombre(), p.getInstruccionesEjecutadas()));
         }
@@ -536,6 +558,57 @@ public class SimuladorGUI extends JFrame {
 
         // Actualizar vista para mostrar los procesos en las colas
         actualizarVista();
+
+        // Limpiar gráficas
+        graficadorMetricas.limpiarDatos();
+    }
+
+    private void mostrarGraficas() {
+        graficadorMetricas.mostrarGraficas();
+    }
+
+    private void actualizarMetricasGraficas() {
+        if (graficadorMetricas != null) {
+            String algoritmo = algoritmoActual.getClass().getSimpleName();
+
+            // Calcular métricas básicas
+            double throughput = calcularThroughput();
+            double cpuUtil = calcularUtilizacionCPU();
+            double tiempoEspera = calcularTiempoEsperaPromedioGraficas();
+
+            // Crear mapa de métricas
+            MapaSimple<String, Double> metricas = new MapaSimple<>();
+            metricas.put("throughput", throughput);
+            metricas.put("cpuUtil", cpuUtil);
+            metricas.put("tiempoEspera", tiempoEspera);
+
+            // Actualizar gráficas
+            graficadorMetricas.actualizarMetricasPorAlgoritmo(algoritmo, metricas);
+        }
+    }
+
+    private double calcularThroughput() {
+        int procesosTerminados = gestorProcesos.getProcesosPorEstado(EstadoProceso.TERMINADO).size();
+        return cicloActual > 0 ? (double) procesosTerminados / cicloActual : 0.0;
+    }
+
+    private double calcularUtilizacionCPU() {
+        // Simplificado: asumimos 100% si hay procesos ejecutándose
+        return procesoEnEjecucion != null ? 100.0 : 0.0;
+    }
+
+    private double calcularTiempoEsperaPromedioGraficas() {
+        ListaSimple<Proceso> procesos = gestorProcesos.getProcesosPorEstado(EstadoProceso.TERMINADO);
+        if (procesos.isEmpty())
+            return 0.0;
+
+        int tiempoTotalEspera = 0;
+        for (int i = 0; i < procesos.tamaño(); i++) {
+            Proceso proceso = procesos.obtener(i);
+            tiempoTotalEspera += proceso.getTiempoEspera();
+        }
+
+        return procesos.tamaño() > 0 ? (double) tiempoTotalEspera / procesos.tamaño() : 0.0;
     }
 
     public static void main(String[] args) {

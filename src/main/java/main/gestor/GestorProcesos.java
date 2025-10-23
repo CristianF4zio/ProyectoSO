@@ -3,20 +3,18 @@ package main.gestor;
 import main.modelo.Proceso;
 import main.modelo.EstadoProceso;
 import main.modelo.TipoProceso;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
+import main.estructuras.ListaSimple;
 import java.time.LocalDateTime;
 
 public class GestorProcesos {
 
-    private List<Proceso> procesosActivos;
-    private AtomicInteger contadorId;
+    private ListaSimple<Proceso> procesosActivos;
+    private int contadorId;
     private int maxProcesos;
 
     public GestorProcesos() {
-        this.procesosActivos = new ArrayList<>();
-        this.contadorId = new AtomicInteger(1);
+        this.procesosActivos = new ListaSimple<>();
+        this.contadorId = 1;
         this.maxProcesos = 100; // Límite por defecto
     }
 
@@ -27,7 +25,7 @@ public class GestorProcesos {
 
     public Proceso crearProceso(String nombre, int numInstrucciones, TipoProceso tipoProceso, int prioridad) {
         // Verificar límite de procesos
-        if (procesosActivos.size() >= maxProcesos) {
+        if (procesosActivos.tamaño() >= maxProcesos) {
             System.err.println("No se puede crear más procesos. Límite alcanzado: " + maxProcesos);
             return null;
         }
@@ -49,13 +47,13 @@ public class GestorProcesos {
         }
 
         // Generar ID único
-        int id = contadorId.getAndIncrement();
+        int id = contadorId++;
 
         // Crear el proceso
         Proceso nuevoProceso = new Proceso(id, nombre, tipoProceso, numInstrucciones, prioridad);
 
         // Agregar a la lista de procesos activos
-        procesosActivos.add(nuevoProceso);
+        procesosActivos.agregar(nuevoProceso);
 
         System.out.println("Proceso creado: " + nuevoProceso);
         return nuevoProceso;
@@ -90,59 +88,86 @@ public class GestorProcesos {
     }
 
     public Proceso buscarProcesoPorId(int id) {
-        return procesosActivos.stream()
-                .filter(p -> p.getId() == id)
-                .findFirst()
-                .orElse(null);
+        for (int i = 0; i < procesosActivos.tamaño(); i++) {
+            Proceso proceso = procesosActivos.obtener(i);
+            if (proceso.getId() == id) {
+                return proceso;
+            }
+        }
+        return null;
     }
 
-    public List<Proceso> buscarProcesosPorNombre(String nombre) {
+    public ListaSimple<Proceso> buscarProcesosPorNombre(String nombre) {
         if (nombre == null) {
-            return new ArrayList<>();
+            return new ListaSimple<>();
         }
 
-        return procesosActivos.stream()
-                .filter(p -> p.getNombre().equalsIgnoreCase(nombre))
-                .collect(java.util.stream.Collectors.toList());
+        ListaSimple<Proceso> resultado = new ListaSimple<>();
+        for (int i = 0; i < procesosActivos.tamaño(); i++) {
+            Proceso proceso = procesosActivos.obtener(i);
+            if (proceso.getNombre().equalsIgnoreCase(nombre)) {
+                resultado.agregar(proceso);
+            }
+        }
+        return resultado;
     }
 
-    public List<Proceso> getProcesosPorEstado(EstadoProceso estado) {
+    public ListaSimple<Proceso> getProcesosPorEstado(EstadoProceso estado) {
         if (estado == null) {
-            return new ArrayList<>();
+            return new ListaSimple<>();
         }
 
-        return procesosActivos.stream()
-                .filter(p -> p.getEstado() == estado)
-                .collect(java.util.stream.Collectors.toList());
+        ListaSimple<Proceso> resultado = new ListaSimple<>();
+        for (int i = 0; i < procesosActivos.tamaño(); i++) {
+            Proceso proceso = procesosActivos.obtener(i);
+            if (proceso.getEstado() == estado) {
+                resultado.agregar(proceso);
+            }
+        }
+        return resultado;
     }
 
-    public List<Proceso> getProcesosPorTipo(TipoProceso tipo) {
+    public ListaSimple<Proceso> getProcesosPorTipo(TipoProceso tipo) {
         if (tipo == null) {
-            return new ArrayList<>();
+            return new ListaSimple<>();
         }
 
-        return procesosActivos.stream()
-                .filter(p -> p.getTipo() == tipo)
-                .collect(java.util.stream.Collectors.toList());
+        ListaSimple<Proceso> resultado = new ListaSimple<>();
+        for (int i = 0; i < procesosActivos.tamaño(); i++) {
+            Proceso proceso = procesosActivos.obtener(i);
+            if (proceso.getTipo() == tipo) {
+                resultado.agregar(proceso);
+            }
+        }
+        return resultado;
     }
 
-    public List<Proceso> getProcesosActivos() {
-        return new ArrayList<>(procesosActivos);
+    public ListaSimple<Proceso> getProcesosActivos() {
+        ListaSimple<Proceso> resultado = new ListaSimple<>();
+        for (int i = 0; i < procesosActivos.tamaño(); i++) {
+            resultado.agregar(procesosActivos.obtener(i));
+        }
+        return resultado;
     }
 
     public int getNumeroProcesosActivos() {
-        return procesosActivos.size();
+        return procesosActivos.tamaño();
     }
 
     public int contarProcesosPorEstado(EstadoProceso estado) {
-        return (int) procesosActivos.stream()
-                .filter(p -> p.getEstado() == estado)
-                .count();
+        int contador = 0;
+        for (int i = 0; i < procesosActivos.tamaño(); i++) {
+            Proceso proceso = procesosActivos.obtener(i);
+            if (proceso.getEstado() == estado) {
+                contador++;
+            }
+        }
+        return contador;
     }
 
     public int[] getEstadisticasProcesos() {
         int[] estadisticas = new int[6];
-        estadisticas[0] = procesosActivos.size(); // Total
+        estadisticas[0] = procesosActivos.tamaño(); // Total
         estadisticas[1] = contarProcesosPorEstado(EstadoProceso.NUEVO);
         estadisticas[2] = contarProcesosPorEstado(EstadoProceso.LISTO);
         estadisticas[3] = contarProcesosPorEstado(EstadoProceso.EJECUCION);
@@ -175,10 +200,11 @@ public class GestorProcesos {
     }
 
     public int limpiarProcesosTerminados() {
-        List<Proceso> procesosTerminados = getProcesosPorEstado(EstadoProceso.TERMINADO);
+        ListaSimple<Proceso> procesosTerminados = getProcesosPorEstado(EstadoProceso.TERMINADO);
         int eliminados = 0;
 
-        for (Proceso proceso : procesosTerminados) {
+        for (int i = 0; i < procesosTerminados.tamaño(); i++) {
+            Proceso proceso = procesosTerminados.obtener(i);
             if (eliminarProceso(proceso)) {
                 eliminados++;
             }
@@ -199,19 +225,19 @@ public class GestorProcesos {
     }
 
     public boolean puedeCrearProceso() {
-        return procesosActivos.size() < maxProcesos;
+        return procesosActivos.tamaño() < maxProcesos;
     }
 
     public int getSiguienteId() {
-        return contadorId.get();
+        return contadorId;
     }
 
     public void reiniciarContadorId() {
-        contadorId.set(1);
+        contadorId = 1;
     }
 
     public void limpiarTodosLosProcesos() {
-        procesosActivos.clear();
+        procesosActivos.limpiar();
         reiniciarContadorId();
         System.out.println("Todos los procesos han sido eliminados");
     }

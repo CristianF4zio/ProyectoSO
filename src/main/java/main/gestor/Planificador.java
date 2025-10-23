@@ -4,7 +4,8 @@ import main.modelo.Proceso;
 import main.modelo.EstadoProceso;
 import main.planificacion.AlgoritmoPlanificacion;
 import main.planificacion.*;
-import java.util.*;
+import main.estructuras.ListaSimple;
+import main.estructuras.MapaSimple;
 
 public class Planificador {
 
@@ -14,7 +15,7 @@ public class Planificador {
     private Proceso procesoEnEjecucion;
 
     // Algoritmos disponibles
-    private Map<String, AlgoritmoPlanificacion> algoritmos;
+    private MapaSimple<String, AlgoritmoPlanificacion> algoritmos;
 
     public Planificador(GestorMemoria gestorMemoria, GestorColas gestorColas) {
         this.gestorMemoria = gestorMemoria;
@@ -26,7 +27,7 @@ public class Planificador {
     }
 
     private void inicializarAlgoritmos() {
-        algoritmos = new HashMap<>();
+        algoritmos = new MapaSimple<>();
         algoritmos.put("FCFS", new FCFS());
         algoritmos.put("SJF", new SJF());
         algoritmos.put("SRTF", new SRTF());
@@ -47,15 +48,15 @@ public class Planificador {
     }
 
     public Proceso seleccionarSiguiente() {
-        List<Proceso> colaListos = gestorColas.getColaListos();
+        ListaSimple<Proceso> colaListos = gestorColas.getColaListos();
 
-        if (colaListos.isEmpty()) {
+        if (colaListos.estaVacia()) {
             // Intentar reactivar procesos suspendidos
             gestorColas.intentarReactivarProcesos();
             colaListos = gestorColas.getColaListos();
         }
 
-        if (colaListos.isEmpty()) {
+        if (colaListos.estaVacia()) {
             return null;
         }
 
@@ -204,4 +205,3 @@ public class Planificador {
         };
     }
 }
-

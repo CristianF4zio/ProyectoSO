@@ -1,42 +1,36 @@
 package main.planificacion;
 
 import main.modelo.Proceso;
-import java.util.List;
-import java.util.Collections;
-import java.util.Comparator;
+import main.estructuras.ListaSimple;
+import main.estructuras.Ordenador;
 
 public class FCFS implements AlgoritmoPlanificacion {
 
     @Override
-    public Proceso seleccionarSiguiente(List<Proceso> procesosListos) {
-        if (procesosListos == null || procesosListos.isEmpty()) {
+    public Proceso seleccionarSiguiente(ListaSimple<Proceso> procesosListos) {
+        if (procesosListos == null || procesosListos.estaVacia()) {
             return null;
         }
-        
-        // FCFS selecciona el proceso que llegó primero (menor tiempo de creación)
-        return procesosListos.stream()
-                .min(Comparator.comparing(Proceso::getTiempoCreacion))
-                .orElse(null);
+
+        // FCFS selecciona el proceso que llegó primero (menor ID)
+        Proceso primero = procesosListos.obtener(0);
+        for (int i = 1; i < procesosListos.tamaño(); i++) {
+            Proceso proceso = procesosListos.obtener(i);
+            if (proceso.getId() < primero.getId()) {
+                primero = proceso;
+            }
+        }
+        return primero;
     }
 
     @Override
-    public void reordenarCola(List<Proceso> procesosListos) {
-        if (procesosListos == null || procesosListos.isEmpty()) {
+    public void reordenarCola(ListaSimple<Proceso> procesosListos) {
+        if (procesosListos == null || procesosListos.estaVacia()) {
             return;
         }
-        
-        // Ordenar por tiempo de creación (FCFS: primero en llegar, primero en ser servido)
-        Collections.sort(procesosListos, new Comparator<Proceso>() {
-            @Override
-            public int compare(Proceso p1, Proceso p2) {
-                // Si los tiempos son iguales, usar ID como criterio de desempate
-                int comparacionTiempo = p1.getTiempoCreacion().compareTo(p2.getTiempoCreacion());
-                if (comparacionTiempo == 0) {
-                    return Integer.compare(p1.getId(), p2.getId());
-                }
-                return comparacionTiempo;
-            }
-        });
+
+        // Ordenar por ID (FCFS: primero en llegar, primero en ser servido)
+        Ordenador.ordenarPorTiempoLlegada(procesosListos);
     }
 
     @Override
@@ -46,8 +40,8 @@ public class FCFS implements AlgoritmoPlanificacion {
 
     public String getDescripcion() {
         return "First Come First Served: Los procesos se ejecutan en el orden de llegada. " +
-               "Es un algoritmo no apropiativo que garantiza equidad pero puede tener " +
-               "problemas de convoy (procesos largos bloquean a los cortos).";
+                "Es un algoritmo no apropiativo que garantiza equidad pero puede tener " +
+                "problemas de convoy (procesos largos bloquean a los cortos).";
     }
 
     public boolean isApropiativo() {

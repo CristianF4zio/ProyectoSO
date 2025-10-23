@@ -2,7 +2,8 @@ package main.core;
 
 import main.gestor.*;
 import main.modelo.*;
-import java.util.*;
+import main.estructuras.ListaSimple;
+import main.estructuras.MapaSimple;
 import java.util.concurrent.Semaphore;
 
 public class SistemaOperativoSimulado {
@@ -137,27 +138,27 @@ public class SistemaOperativoSimulado {
         return planificador.getNombreAlgoritmo();
     }
 
-    public List<Proceso> getColaListos() {
+    public ListaSimple<Proceso> getColaListos() {
         return gestorColas.getColaListos();
     }
 
-    public List<Proceso> getColaBloqueados() {
+    public ListaSimple<Proceso> getColaBloqueados() {
         return gestorColas.getColaBloqueados();
     }
 
-    public List<Proceso> getColaSuspendidos() {
+    public ListaSimple<Proceso> getColaSuspendidos() {
         return gestorColas.getColaSuspendidos();
     }
 
-    public List<Proceso> getColaTerminados() {
+    public ListaSimple<Proceso> getColaTerminados() {
         return gestorColas.getColaTerminados();
     }
 
-    public List<Proceso> getColaListosSuspendidos() {
+    public ListaSimple<Proceso> getColaListosSuspendidos() {
         return gestorColas.getColaListosSuspendidos();
     }
 
-    public List<Proceso> getColaBloqueadosSuspendidos() {
+    public ListaSimple<Proceso> getColaBloqueadosSuspendidos() {
         return gestorColas.getColaBloqueadosSuspendidos();
     }
 

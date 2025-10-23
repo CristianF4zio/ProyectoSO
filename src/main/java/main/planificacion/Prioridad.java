@@ -1,98 +1,63 @@
 package main.planificacion;
 
 import main.modelo.Proceso;
-import java.util.List;
-import java.util.Collections;
-import java.util.Comparator;
+import main.estructuras.ListaSimple;
+import main.estructuras.Ordenador;
 
 public class Prioridad implements AlgoritmoPlanificacion {
 
     @Override
-    public Proceso seleccionarSiguiente(List<Proceso> procesosListos) {
-        if (procesosListos == null || procesosListos.isEmpty()) {
+    public Proceso seleccionarSiguiente(ListaSimple<Proceso> procesosListos) {
+        if (procesosListos == null || procesosListos.estaVacia()) {
             return null;
         }
 
-        // Prioridad selecciona el proceso con menor número de prioridad (mayor
-        // prioridad)
-        return procesosListos.stream()
-                .min(Comparator.comparing(Proceso::getPrioridad)
-                        .thenComparing(Proceso::getTiempoCreacion)
-                        .thenComparing(Proceso::getId))
-                .orElse(null);
+        // Prioridad selecciona el proceso con mayor prioridad (menor número)
+        Proceso mayorPrioridad = procesosListos.obtener(0);
+        for (int i = 1; i < procesosListos.tamaño(); i++) {
+            Proceso proceso = procesosListos.obtener(i);
+            if (proceso.getPrioridad() < mayorPrioridad.getPrioridad()) {
+                mayorPrioridad = proceso;
+            } else if (proceso.getPrioridad() == mayorPrioridad.getPrioridad()) {
+                if (proceso.getId() < mayorPrioridad.getId()) {
+                    mayorPrioridad = proceso;
+                }
+            }
+        }
+        return mayorPrioridad;
     }
 
     @Override
-    public void reordenarCola(List<Proceso> procesosListos) {
-        if (procesosListos == null || procesosListos.isEmpty()) {
+    public void reordenarCola(ListaSimple<Proceso> procesosListos) {
+        if (procesosListos == null || procesosListos.estaVacia()) {
             return;
         }
 
         // Ordenar por prioridad (menor número = mayor prioridad)
-        Collections.sort(procesosListos, new Comparator<Proceso>() {
-            @Override
-            public int compare(Proceso p1, Proceso p2) {
-                // Primero por prioridad (menor número = mayor prioridad)
-                int comparacionPrioridad = Integer.compare(p1.getPrioridad(), p2.getPrioridad());
-
-                if (comparacionPrioridad != 0) {
-                    return comparacionPrioridad;
-                }
-
-                // Si tienen la misma prioridad, por tiempo de creación (FCFS)
-                int comparacionTiempo = p1.getTiempoCreacion().compareTo(p2.getTiempoCreacion());
-                if (comparacionTiempo != 0) {
-                    return comparacionTiempo;
-                }
-
-                // Si todo es igual, por ID
-                return Integer.compare(p1.getId(), p2.getId());
-            }
-        });
+        Ordenador.ordenarPorPrioridad(procesosListos);
     }
 
     @Override
     public String getNombre() {
-        return "Planificación por Prioridades";
+        return "Prioridad";
     }
 
-    public String getDescripcion() {
-        return "Planificación por Prioridades: Los procesos se ejecutan en orden de prioridad. " +
-                "Menor número de prioridad = mayor prioridad. Puede causar inanición de " +
-                "procesos de baja prioridad si llegan constantemente procesos de alta prioridad.";
+    public boolean tieneMayorPrioridad(Proceso p1, Proceso p2) {
+        return p1.getPrioridad() < p2.getPrioridad();
     }
 
-    public boolean isApropiativo() {
-        return false;
-    }
-
-    public boolean tieneMayorPrioridad(Proceso proceso1, Proceso proceso2) {
-        if (proceso1 == null || proceso2 == null) {
-            return false;
-        }
-
-        // Menor número de prioridad = mayor prioridad
-        return proceso1.getPrioridad() < proceso2.getPrioridad();
-    }
-
-    public int obtenerPrioridadMasAlta(List<Proceso> procesos) {
-        if (procesos == null || procesos.isEmpty()) {
+    public int obtenerPrioridadMasAlta(ListaSimple<Proceso> procesos) {
+        if (procesos == null || procesos.estaVacia()) {
             return Integer.MAX_VALUE;
         }
 
-        return procesos.stream()
-                .mapToInt(Proceso::getPrioridad)
-                .min()
-                .orElse(Integer.MAX_VALUE);
-    }
-
-    public long contarProcesosPorPrioridad(List<Proceso> procesos, int prioridad) {
-        if (procesos == null) {
-            return 0;
+        int prioridadMasAlta = procesos.obtener(0).getPrioridad();
+        for (int i = 1; i < procesos.tamaño(); i++) {
+            int prioridad = procesos.obtener(i).getPrioridad();
+            if (prioridad < prioridadMasAlta) {
+                prioridadMasAlta = prioridad;
+            }
         }
-
-        return procesos.stream()
-                .filter(p -> p.getPrioridad() == prioridad)
-                .count();
+        return prioridadMasAlta;
     }
 }
