@@ -157,21 +157,34 @@ public class GraficadorMetricas {
     }
 
     public void actualizarMetricas(String algoritmo, double throughput, double cpuUtil, double tiempoEspera) {
+        if (algoritmo == null)
+            algoritmo = "Desconocido";
+
         // Actualizar datasets de barras
-        datasetThroughput.setValue(throughput, "Throughput", algoritmo);
-        datasetCPUUtil.setValue(cpuUtil, "Utilización CPU", algoritmo);
-        datasetTiempoEspera.setValue(tiempoEspera, "Tiempo de Espera", algoritmo);
+        if (datasetThroughput != null)
+            datasetThroughput.setValue(throughput, "Throughput", algoritmo);
+        if (datasetCPUUtil != null)
+            datasetCPUUtil.setValue(cpuUtil, "Utilización CPU", algoritmo);
+        if (datasetTiempoEspera != null)
+            datasetTiempoEspera.setValue(tiempoEspera, "Tiempo de Espera", algoritmo);
 
         // Actualizar gráfica de tiempo real
-        serieThroughput.add(cicloActual, throughput);
-        serieCPUUtil.add(cicloActual, cpuUtil);
-        serieTiempoEspera.add(cicloActual, tiempoEspera);
+        if (serieThroughput != null)
+            serieThroughput.add(cicloActual, throughput);
+        if (serieCPUUtil != null)
+            serieCPUUtil.add(cicloActual, cpuUtil);
+        if (serieTiempoEspera != null)
+            serieTiempoEspera.add(cicloActual, tiempoEspera);
 
         // Mantener solo los últimos 50 puntos para mejor visualización
-        if (serieThroughput.getItemCount() > 50) {
-            serieThroughput.delete(0, 0);
-            serieCPUUtil.delete(0, 0);
-            serieTiempoEspera.delete(0, 0);
+        if (serieThroughput != null && serieThroughput.getItemCount() > 50) {
+            serieThroughput.remove(0);
+        }
+        if (serieCPUUtil != null && serieCPUUtil.getItemCount() > 50) {
+            serieCPUUtil.remove(0);
+        }
+        if (serieTiempoEspera != null && serieTiempoEspera.getItemCount() > 50) {
+            serieTiempoEspera.remove(0);
         }
 
         cicloActual++;
@@ -190,28 +203,45 @@ public class GraficadorMetricas {
     }
 
     public void limpiarDatos() {
-        datasetThroughput.clear();
-        datasetCPUUtil.clear();
-        datasetTiempoEspera.clear();
+        if (datasetThroughput != null)
+            datasetThroughput.clear();
+        if (datasetCPUUtil != null)
+            datasetCPUUtil.clear();
+        if (datasetTiempoEspera != null)
+            datasetTiempoEspera.clear();
 
-        serieThroughput.clear();
-        serieCPUUtil.clear();
-        serieTiempoEspera.clear();
+        if (serieThroughput != null)
+            serieThroughput.clear();
+        if (serieCPUUtil != null)
+            serieCPUUtil.clear();
+        if (serieTiempoEspera != null)
+            serieTiempoEspera.clear();
 
         cicloActual = 0;
-        metricasPorAlgoritmo.limpiar();
+        if (metricasPorAlgoritmo != null)
+            metricasPorAlgoritmo.limpiar();
     }
 
     public void actualizarMetricasPorAlgoritmo(String algoritmo, MapaSimple<String, Double> metricas) {
-        ListaSimple<String> claves = metricas.claves();
-        for (int i = 0; i < claves.tamaño(); i++) {
-            String clave = claves.obtener(i);
-            metricasPorAlgoritmo.poner(clave, metricas.obtener(clave));
+        if (metricas != null) {
+            ListaSimple<String> claves = metricas.claves();
+            if (claves != null) {
+                for (int i = 0; i < claves.tamaño(); i++) {
+                    String clave = claves.obtener(i);
+                    if (clave != null) {
+                        metricasPorAlgoritmo.poner(clave, metricas.obtener(clave));
+                    }
+                }
+            }
         }
 
-        double throughput = metricas.obtener("throughput") != null ? metricas.obtener("throughput") : 0.0;
-        double cpuUtil = metricas.obtener("cpuUtil") != null ? metricas.obtener("cpuUtil") : 0.0;
-        double tiempoEspera = metricas.obtener("tiempoEspera") != null ? metricas.obtener("tiempoEspera") : 0.0;
+        double throughput = (metricas != null && metricas.obtener("throughput") != null)
+                ? metricas.obtener("throughput")
+                : 0.0;
+        double cpuUtil = (metricas != null && metricas.obtener("cpuUtil") != null) ? metricas.obtener("cpuUtil") : 0.0;
+        double tiempoEspera = (metricas != null && metricas.obtener("tiempoEspera") != null)
+                ? metricas.obtener("tiempoEspera")
+                : 0.0;
 
         actualizarMetricas(algoritmo, throughput, cpuUtil, tiempoEspera);
     }
