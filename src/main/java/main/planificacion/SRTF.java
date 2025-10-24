@@ -34,7 +34,19 @@ public class SRTF implements AlgoritmoPlanificacion {
         }
 
         // Ordenar por tiempo restante (SRTF: tiempo restante más corto primero)
-        Ordenador.ordenarPorInstrucciones(procesosListos);
+        // Crear una copia para no modificar la lista original
+        ListaSimple<Proceso> copia = new ListaSimple<>();
+        for (int i = 0; i < procesosListos.tamaño(); i++) {
+            copia.agregar(procesosListos.obtener(i));
+        }
+        
+        Ordenador.ordenarPorInstrucciones(copia);
+        
+        // Reemplazar la lista original con la ordenada
+        procesosListos.limpiar();
+        for (int i = 0; i < copia.tamaño(); i++) {
+            procesosListos.agregar(copia.obtener(i));
+        }
     }
 
     @Override

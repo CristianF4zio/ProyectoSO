@@ -56,16 +56,11 @@ public class MultinivelFeedback implements AlgoritmoPlanificacion {
             if (!colaNivel.estaVacia()) {
                 // Ordenar por tiempo de llegada dentro del nivel
                 Ordenador.ordenarPorTiempoLlegada(colaNivel);
-
-                // Agregar todos los procesos de este nivel a la lista principal
-                for (int i = 0; i < colaNivel.tamaño(); i++) {
-                    procesosListos.agregar(colaNivel.obtener(i));
-                }
-                break; // Solo procesar el primer nivel con procesos
+                return colaNivel.obtener(0); // Retornar el primer proceso del nivel
             }
         }
 
-        return procesosListos.estaVacia() ? null : procesosListos.obtener(0);
+        return null;
     }
 
     @Override
