@@ -6,6 +6,10 @@ import main.planificacion.*;
 import main.estructuras.ListaSimple;
 import main.estructuras.MapaSimple;
 import main.graficas.GraficadorMetricas;
+import main.gui.PanelPCB;
+import main.interrupciones.ManejadorInterrupciones;
+import main.config.ConfiguracionSistema;
+import main.config.GestorConfiguracion;
 import javax.swing.*;
 import java.awt.*;
 
@@ -36,17 +40,27 @@ public class SimuladorGUI extends JFrame {
     private Timer timer;
     private boolean ejecutando = false;
     private GraficadorMetricas graficadorMetricas;
+    private PanelPCB panelPCB;
+    private ManejadorInterrupciones manejadorInterrupciones;
+    private ConfiguracionSistema configuracion;
+    
+    private final Object mutex = new Object();
 
     public SimuladorGUI() {
         super("Simulador de Sistema Operativo - GUI");
 
+        // Cargar configuración
+        configuracion = GestorConfiguracion.cargarConfiguracion();
+        
         // Inicializar componentes
-        gestorProcesos = new GestorProcesos(50);
+        gestorProcesos = new GestorProcesos(configuracion.getMaxProcesos());
         algoritmoActual = new FCFS();
         graficadorMetricas = new GraficadorMetricas();
+        manejadorInterrupciones = new ManejadorInterrupciones();
+        panelPCB = new PanelPCB();
 
         // Configurar ventana
-        setSize(1200, 700);
+        setSize(1600, 800);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -102,8 +116,7 @@ public class SimuladorGUI extends JFrame {
         lblAlgoritmo.setFont(new Font("Arial", Font.PLAIN, 14));
 
         // Combo de algoritmos
-        String[] algoritmos = { "FCFS", "SJF", "SRTF", "Prioridad", "Round Robin", "Multinivel",
-                "Multinivel Feedback" };
+        String[] algoritmos = { "FCFS", "Round Robin", "SPN", "SRT", "HRRN", "Feedback" };
         comboAlgoritmos = new JComboBox<>(algoritmos);
         comboAlgoritmos.addActionListener(e -> cambiarAlgoritmo());
 
@@ -149,6 +162,21 @@ public class SimuladorGUI extends JFrame {
         panelControl.add(btnLimpiarLog);
         panelControl.add(btnReiniciar);
         panelControl.add(btnVerGraficas);
+        
+        // Panel de configuración
+        JPanel panelConfig = new JPanel(new FlowLayout());
+        panelConfig.setBorder(BorderFactory.createTitledBorder("Configuración"));
+        
+        JButton btnGuardarConfig = new JButton("💾 Guardar Config");
+        btnGuardarConfig.setToolTipText("Guarda la configuración actual en archivo JSON");
+        btnGuardarConfig.addActionListener(e -> guardarConfiguracion());
+        
+        JButton btnCargarConfig = new JButton("📂 Cargar Config");
+        btnCargarConfig.setToolTipText("Carga configuración desde archivo JSON");
+        btnCargarConfig.addActionListener(e -> cargarConfiguracion());
+        
+        panelConfig.add(btnGuardarConfig);
+        panelConfig.add(btnCargarConfig);
 
         // Panel izquierdo - Colas
         JPanel panelColas = new JPanel(new GridLayout(2, 1, 5, 5));
@@ -170,18 +198,22 @@ public class SimuladorGUI extends JFrame {
         panelConsola.setBorder(BorderFactory.createTitledBorder("Log de Eventos"));
         panelConsola.add(new JScrollPane(areaConsola), BorderLayout.CENTER);
 
-        // Panel superior combinado
+        // Panel superior combinado con configuración
         JPanel panelTop = new JPanel(new BorderLayout());
         panelTop.add(panelEstado, BorderLayout.WEST);
         panelTop.add(panelControl, BorderLayout.CENTER);
+        panelTop.add(panelConfig, BorderLayout.EAST);
 
-        // Split panel para colas y consola
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, panelColas, panelConsola);
-        splitPane.setDividerLocation(350);
+        // Split panel para colas, consola y PCB
+        JSplitPane splitIzquierda = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, panelColas, panelConsola);
+        splitIzquierda.setDividerLocation(350);
+        
+        JSplitPane splitPrincipal = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, splitIzquierda, panelPCB);
+        splitPrincipal.setDividerLocation(900);
 
         // Agregar a la ventana
         add(panelTop, BorderLayout.NORTH);
-        add(splitPane, BorderLayout.CENTER);
+        add(splitPrincipal, BorderLayout.CENTER);
     }
 
     private void crearProcesosInicialesSilencioso() {
@@ -198,7 +230,8 @@ public class SimuladorGUI extends JFrame {
             Proceso p = procesosActivos.obtener(i);
             p.setEstado(EstadoProceso.LISTO);
         }
-
+        
+        panelPCB.setTotalProcesosCreados(gestorProcesos.getSiguienteId() - 1);
         actualizarVista();
     }
 
@@ -253,57 +286,86 @@ public class SimuladorGUI extends JFrame {
     }
 
     private void ejecutarCiclo() {
-        cicloActual++;
-        lblCiclo.setText("Ciclo: " + cicloActual);
-
-        // Si no hay proceso en ejecución, seleccionar siguiente
-        if (procesoEnEjecucion == null) {
-            ListaSimple<Proceso> listos = gestorProcesos.getProcesosPorEstado(EstadoProceso.LISTO);
-            if (!listos.isEmpty()) {
-                algoritmoActual.reordenarCola(listos);
-                procesoEnEjecucion = algoritmoActual.seleccionarSiguiente(listos);
-
-                if (procesoEnEjecucion != null) {
-                    procesoEnEjecucion.setEstado(EstadoProceso.EJECUCION);
-                    procesoEnEjecucion.iniciarEjecucion();
-
-                    String tipoDescripcion = procesoEnEjecucion.getTipo() == TipoProceso.CPU_BOUND
-                            ? "CPU BOUND (cálculo intensivo)"
-                            : "IO BOUND (operaciones I/O)";
-
-                    log("→ Proceso en CPU: " + procesoEnEjecucion.getNombre() + " - " + tipoDescripcion);
+        synchronized (mutex) {
+            cicloActual++;
+            lblCiclo.setText("Ciclo: " + cicloActual);
+            
+            // Verificar interrupción por prioridad (algoritmo preemptivo)
+            if (procesoEnEjecucion != null && algoritmoActual instanceof Prioridad) {
+                Prioridad algPrioridad = (Prioridad) algoritmoActual;
+                ListaSimple<Proceso> listos = gestorProcesos.getProcesosPorEstado(EstadoProceso.LISTO);
+                
+                if (algPrioridad.debeDesalojar(procesoEnEjecucion, listos)) {
+                    log("⚡ INTERRUPCIÓN POR PRIORIDAD: Desalojando " + procesoEnEjecucion.getNombre() + 
+                        " (Prioridad: " + procesoEnEjecucion.getPrioridad() + ")");
+                    
+                    manejadorInterrupciones.generarInterrupcion(
+                        main.interrupciones.TipoInterrupcion.CAMBIO_CONTEXTO, 
+                        procesoEnEjecucion, 
+                        cicloActual, 
+                        "Desalojo por mayor prioridad en cola");
+                    
+                    procesoEnEjecucion.setEstado(EstadoProceso.LISTO);
+                    procesoEnEjecucion = null;
                 }
             }
-        }
 
-        // Ejecutar proceso actual
-        if (procesoEnEjecucion != null) {
-            lblCPU.setText("CPU: " + procesoEnEjecucion.getNombre() +
-                    " [PC: " + procesoEnEjecucion.getProgramCounter() + "]");
+            // Si no hay proceso en ejecución, seleccionar siguiente
+            if (procesoEnEjecucion == null) {
+                ListaSimple<Proceso> listos = gestorProcesos.getProcesosPorEstado(EstadoProceso.LISTO);
+                if (!listos.isEmpty()) {
+                    algoritmoActual.reordenarCola(listos);
+                    procesoEnEjecucion = algoritmoActual.seleccionarSiguiente(listos);
 
-            // Incrementar PC
-            procesoEnEjecucion.setProgramCounter(procesoEnEjecucion.getProgramCounter() + 1);
-            procesoEnEjecucion.setInstruccionesEjecutadas(
-                    procesoEnEjecucion.getInstruccionesEjecutadas() + 1);
+                    if (procesoEnEjecucion != null) {
+                        procesoEnEjecucion.setEstado(EstadoProceso.EJECUCION);
+                        procesoEnEjecucion.iniciarEjecucion();
+                        
+                        manejadorInterrupciones.generarCambioContexto(procesoEnEjecucion, cicloActual);
 
-            // Verificar si terminó
-            if (procesoEnEjecucion.getProgramCounter() >= procesoEnEjecucion.getNumInstrucciones()) {
-                procesoEnEjecucion.setEstado(EstadoProceso.TERMINADO);
-                procesoEnEjecucion.finalizarEjecucion();
+                        String tipoDescripcion = procesoEnEjecucion.getTipo() == TipoProceso.CPU_BOUND
+                                ? "CPU BOUND (cálculo intensivo)"
+                                : "IO BOUND (operaciones I/O)";
 
-                String tipoDescripcion = procesoEnEjecucion.getTipo() == TipoProceso.CPU_BOUND
-                        ? "CPU BOUND completado"
-                        : "IO BOUND completado";
+                        log("→ Proceso en CPU: " + procesoEnEjecucion.getNombre() + 
+                            " (Prioridad: " + procesoEnEjecucion.getPrioridad() + ") - " + tipoDescripcion);
+                    }
+                }
+            }
 
-                log("✓ Proceso terminado: " + procesoEnEjecucion.getNombre() + " - " + tipoDescripcion);
-                procesoEnEjecucion = null;
+            // Ejecutar proceso actual
+            if (procesoEnEjecucion != null) {
+                lblCPU.setText("CPU: " + procesoEnEjecucion.getNombre() +
+                        " [PC: " + procesoEnEjecucion.getProgramCounter() + "]");
+
+                // Incrementar PC
+                procesoEnEjecucion.setProgramCounter(procesoEnEjecucion.getProgramCounter() + 1);
+                procesoEnEjecucion.setInstruccionesEjecutadas(
+                        procesoEnEjecucion.getInstruccionesEjecutadas() + 1);
+
+                // Verificar si terminó
+                if (procesoEnEjecucion.getProgramCounter() >= procesoEnEjecucion.getNumInstrucciones()) {
+                    procesoEnEjecucion.setEstado(EstadoProceso.TERMINADO);
+                    procesoEnEjecucion.finalizarEjecucion();
+                    
+                    manejadorInterrupciones.generarInterrupcionFinalizacion(procesoEnEjecucion, cicloActual);
+
+                    String tipoDescripcion = procesoEnEjecucion.getTipo() == TipoProceso.CPU_BOUND
+                            ? "CPU BOUND completado"
+                            : "IO BOUND completado";
+
+                    log("✓ Proceso terminado: " + procesoEnEjecucion.getNombre() + " - " + tipoDescripcion);
+                    procesoEnEjecucion = null;
+                    lblCPU.setText("CPU: IDLE");
+                }
+            } else {
                 lblCPU.setText("CPU: IDLE");
             }
-        } else {
-            lblCPU.setText("CPU: IDLE");
-        }
 
-        actualizarVista();
+            panelPCB.actualizarPCB(procesoEnEjecucion, cicloActual);
+            panelPCB.actualizarEstadoColas(gestorProcesos);
+            actualizarVista();
+        }
 
         // Actualizar gráficas cada 5 ciclos
         if (cicloActual % 5 == 0) {
@@ -326,28 +388,26 @@ public class SimuladorGUI extends JFrame {
             case "FCFS":
                 algoritmoActual = new FCFS();
                 break;
-            case "SJF":
+            case "SPN":
                 algoritmoActual = new SJF();
                 break;
-            case "SRTF":
+            case "SRT":
                 algoritmoActual = new SRTF();
                 break;
-            case "Prioridad":
-                algoritmoActual = new Prioridad();
+            case "HRRN":
+                algoritmoActual = new HRRN();
                 break;
             case "Round Robin":
                 algoritmoActual = new RoundRobin(3);
                 break;
-            case "Multinivel":
-                algoritmoActual = new Multinivel(3);
-                break;
-            case "Multinivel Feedback":
+            case "Feedback":
                 algoritmoActual = new MultinivelFeedback(3);
                 break;
         }
 
-        lblAlgoritmo.setText("Algoritmo: " + algoritmoActual.getNombre());
-        log("Algoritmo cambiado a: " + algoritmoActual.getNombre());
+        lblAlgoritmo.setText("Algoritmo: " + seleccion);
+        panelPCB.setAlgoritmo(seleccion);
+        log("Algoritmo cambiado a: " + seleccion);
     }
 
     private void mostrarDialogoCrearProceso() {
@@ -379,6 +439,7 @@ public class SimuladorGUI extends JFrame {
 
             if (p != null) {
                 p.setEstado(EstadoProceso.LISTO);
+                panelPCB.setTotalProcesosCreados(gestorProcesos.getSiguienteId() - 1);
                 log("+ Proceso creado: " + p.getNombre());
                 actualizarVista();
             }
@@ -610,6 +671,57 @@ public class SimuladorGUI extends JFrame {
         }
 
         return procesos.tamaño() > 0 ? (double) tiempoTotalEspera / procesos.tamaño() : 0.0;
+    }
+    
+    private void guardarConfiguracion() {
+        synchronized (mutex) {
+            configuracion.setMaxProcesos(gestorProcesos.getMaxProcesos());
+            configuracion.setAlgoritmoInicial(algoritmoActual.getNombre());
+            
+            boolean guardado = GestorConfiguracion.guardarConfiguracion(configuracion);
+            
+            if (guardado) {
+                JOptionPane.showMessageDialog(this, 
+                    "Configuración guardada exitosamente en configuracion_simulador.json",
+                    "Guardar Configuración",
+                    JOptionPane.INFORMATION_MESSAGE);
+                log("✓ Configuración guardada");
+            } else {
+                JOptionPane.showMessageDialog(this,
+                    "Error al guardar la configuración",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+                log("✗ Error al guardar configuración");
+            }
+        }
+    }
+    
+    private void cargarConfiguracion() {
+        if (!GestorConfiguracion.existe()) {
+            JOptionPane.showMessageDialog(this,
+                "No existe archivo de configuración previo",
+                "Cargar Configuración",
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        int respuesta = JOptionPane.showConfirmDialog(this,
+            "¿Desea cargar la configuración guardada?\nEsto reiniciará el simulador.",
+            "Cargar Configuración",
+            JOptionPane.YES_NO_OPTION);
+        
+        if (respuesta == JOptionPane.YES_OPTION) {
+            synchronized (mutex) {
+                configuracion = GestorConfiguracion.cargarConfiguracion();
+                reiniciarProyecto();
+                log("✓ Configuración cargada desde archivo");
+            }
+            
+            JOptionPane.showMessageDialog(this,
+                "Configuración cargada exitosamente",
+                "Cargar Configuración",
+                JOptionPane.INFORMATION_MESSAGE);
+        }
     }
 
     public static void main(String[] args) {

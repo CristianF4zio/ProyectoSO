@@ -72,4 +72,19 @@ public class Prioridad implements AlgoritmoPlanificacion {
         }
         return prioridadMasAlta;
     }
+    
+    public boolean debeDesalojar(Proceso procesoActual, ListaSimple<Proceso> procesosListos) {
+        if (procesoActual == null || procesosListos == null || procesosListos.isEmpty()) {
+            return false;
+        }
+        
+        for (int i = 0; i < procesosListos.tamaño(); i++) {
+            Proceso p = procesosListos.obtener(i);
+            if (p.getPrioridad() < procesoActual.getPrioridad()) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
 }

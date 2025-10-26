@@ -1,0 +1,14 @@
+package main.interrupciones;
+
+public enum TipoInterrupcion {
+    IO_SOLICITUD,
+    IO_COMPLETADA,
+    TIMER_QUANTUM,
+    ERROR_MEMORIA,
+    ERROR_DIVISION_CERO,
+    ERROR_INSTRUCCION_INVALIDA,
+    FINALIZACION_PROCESO,
+    CAMBIO_CONTEXTO
+}
+
+

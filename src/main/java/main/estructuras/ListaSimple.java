@@ -47,6 +47,13 @@ public class ListaSimple<T> {
         }
         return (T) elementos[indice];
     }
+    
+    public void set(int indice, T elemento) {
+        if (indice < 0 || indice >= tamaño) {
+            throw new IndexOutOfBoundsException("Índice fuera de rango: " + indice);
+        }
+        elementos[indice] = elemento;
+    }
 
     public T remover(int indice) {
         if (indice < 0 || indice >= tamaño) {
